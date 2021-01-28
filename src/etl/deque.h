@@ -206,8 +206,8 @@ namespace etl
     //*************************************************************************
     deque_base(size_t max_size_, size_t buffer_size_)
       : current_size(0),
-        CAPACITY(max_size_),
-        BUFFER_SIZE(buffer_size_)
+      CAPACITY(max_size_),
+      BUFFER_SIZE(buffer_size_)
     {
     }
 
@@ -236,12 +236,12 @@ namespace etl
 
     typedef T        value_type;
     typedef size_t   size_type;
-    typedef T&       reference;
+    typedef T& reference;
     typedef const T& const_reference;
 #if ETL_CPP11_SUPPORTED
-    typedef T&&      rvalue_reference;
+    typedef T&& rvalue_reference;
 #endif
-    typedef T*       pointer;
+    typedef T* pointer;
     typedef const T* const_pointer;
     typedef typename etl::iterator_traits<pointer>::difference_type difference_type;
 
@@ -260,10 +260,12 @@ namespace etl
     //*************************************************************************
     /// Iterator
     //*************************************************************************
-    struct iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, T>
+    class iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, T>
     {
+    public:
+
       friend class ideque;
-      friend struct const_iterator;
+      friend class const_iterator;
 
       //***************************************************
       iterator()
@@ -284,8 +286,8 @@ namespace etl
       //***************************************************
       iterator& operator =(const iterator& other)
       {
-        index    = other.index;
-        p_deque  = other.p_deque;
+        index = other.index;
+        p_deque = other.p_deque;
         p_buffer = other.p_buffer;
 
         return *this;
@@ -491,15 +493,17 @@ namespace etl
       }
 
       difference_type index;
-      ideque*         p_deque;
+      ideque* p_deque;
       pointer         p_buffer;
     };
 
     //*************************************************************************
     /// Const Iterator
     //*************************************************************************
-    struct const_iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, const T>
+    class const_iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, const T>
     {
+    public:
+
       friend class ideque;
 
       //***************************************************
@@ -529,8 +533,8 @@ namespace etl
       //***************************************************
       const_iterator& operator =(const const_iterator& other)
       {
-        index    = other.index;
-        p_deque  = other.p_deque;
+        index = other.index;
+        p_deque = other.p_deque;
         p_buffer = other.p_buffer;
 
         return *this;
@@ -538,8 +542,8 @@ namespace etl
 
       const_iterator& operator =(const typename ideque::iterator& other)
       {
-        index    = other.index;
-        p_deque  = other.p_deque;
+        index = other.index;
+        p_deque = other.p_deque;
         p_buffer = other.p_buffer;
 
         return *this;
@@ -733,7 +737,7 @@ namespace etl
       }
 
       difference_type index;
-      ideque*         p_deque;
+      ideque* p_deque;
       pointer         p_buffer;
     };
 
@@ -1095,7 +1099,7 @@ namespace etl
         p = etl::addressof(*_begin);
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _begin;
+          position = _begin;
       }
       else if (insert_position == end())
       {
@@ -1103,7 +1107,7 @@ namespace etl
         ++_end;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _end - 1;
+          position = _end - 1;
       }
       else
       {
@@ -1162,7 +1166,7 @@ namespace etl
         p = etl::addressof(*_begin);
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _begin;
+          position = _begin;
       }
       else if (insert_position == end())
       {
@@ -1170,7 +1174,7 @@ namespace etl
         ++_end;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _end - 1;
+          position = _end - 1;
       }
       else
       {
@@ -1227,7 +1231,7 @@ namespace etl
         p = etl::addressof(*_begin);
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _begin;
+          position = _begin;
       }
       else if (insert_position == end())
       {
@@ -1235,7 +1239,7 @@ namespace etl
         ++_end;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _end - 1;
+          position = _end - 1;
       }
       else
       {
@@ -1292,7 +1296,7 @@ namespace etl
         p = etl::addressof(*_begin);
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _begin;
+          position = _begin;
       }
       else if (insert_position == end())
       {
@@ -1300,7 +1304,7 @@ namespace etl
         ++_end;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _end - 1;
+          position = _end - 1;
       }
       else
       {
@@ -1357,7 +1361,7 @@ namespace etl
         p = etl::addressof(*_begin);
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _begin;
+          position = _begin;
       }
       else if (insert_position == end())
       {
@@ -1365,7 +1369,7 @@ namespace etl
         ++_end;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-        position = _end - 1;
+          position = _end - 1;
       }
       else
       {
@@ -2090,7 +2094,7 @@ namespace etl
     //*************************************************************************
     ideque(pointer p_buffer_, size_t max_size_, size_t buffer_size_)
       : deque_base(max_size_, buffer_size_),
-        p_buffer(p_buffer_)
+      p_buffer(p_buffer_)
     {
     }
 
@@ -2101,7 +2105,7 @@ namespace etl
     {
       if ETL_IF_CONSTEXPR(etl::is_trivially_destructible<T>::value)
       {
-        current_size    = 0;
+        current_size = 0;
         ETL_RESET_DEBUG_COUNT
       }
       else
@@ -2113,7 +2117,7 @@ namespace etl
       }
 
       _begin = iterator(0, *this, p_buffer);
-      _end   = iterator(0, *this, p_buffer);
+      _end = iterator(0, *this, p_buffer);
     }
 
     //*************************************************************************
@@ -2124,7 +2128,7 @@ namespace etl
       p_buffer = p_buffer_;
 
       _begin = iterator(_begin.index, *this, p_buffer);
-      _end   = iterator(_end.index,   *this, p_buffer);
+      _end = iterator(_end.index, *this, p_buffer);
     }
 
     iterator _begin;   ///Iterator to the _begin item in the deque.
@@ -2233,7 +2237,7 @@ namespace etl
       (*_begin).~T();
       --current_size;
       ETL_DECREMENT_DEBUG_COUNT
-      ++_begin;
+        ++_begin;
     }
 
     //*********************************************************************
@@ -2319,9 +2323,9 @@ namespace etl
   public:
 
     typedef T        value_type;
-    typedef T*       pointer;
+    typedef T* pointer;
     typedef const T* const_pointer;
-    typedef T&       reference;
+    typedef T& reference;
     typedef const T& const_reference;
     typedef size_t   size_type;
     typedef typename etl::iterator_traits<pointer>::difference_type difference_type;
@@ -2507,9 +2511,9 @@ namespace etl
   bool operator <(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
   {
     return etl::lexicographical_compare(lhs.begin(),
-                                           lhs.end(),
-                                           rhs.begin(),
-                                           rhs.end());
+      lhs.end(),
+      rhs.begin(),
+      rhs.end());
   }
 
   //***************************************************************************

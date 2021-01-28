@@ -125,13 +125,15 @@ namespace etl
     typedef const value_type* const_pointer;
     typedef size_t            size_type;
 
+    class const_iterator;
+
     //*************************************************************************
     class iterator : public etl::iterator<ETL_OR_STD::bidirectional_iterator_tag, value_type>
     {
     public:
 
       friend class ireference_flat_map;
-      friend class const_iterator;
+      friend class ireference_flat_map::const_iterator;
 
       iterator()
       {
