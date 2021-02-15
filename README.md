@@ -12,7 +12,7 @@
 
 https://github.com/ETLCPP/etl
 
-See (https://www.etlcpp.com/arduino) for up-to-date information.
+See (https://www.etlcpp.com/arduino.html) for up-to-date information.
 
 
 
