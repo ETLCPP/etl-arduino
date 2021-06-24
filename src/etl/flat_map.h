@@ -41,9 +41,6 @@ SOFTWARE.
 #endif
 #include "utility.h"
 
-#undef ETL_FILE
-#define ETL_FILE "2"
-
 //*****************************************************************************
 ///\defgroup flat_map flat_map
 /// A flat_map based on a sorted vector with the capacity defined at
@@ -900,7 +897,7 @@ namespace etl
   {
   public:
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Constructor.
@@ -939,7 +936,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     flat_map(TIterator first, TIterator last)
       : etl::iflat_map<TKey, TValue, TCompare>(lookup, storage)
     {
@@ -1015,7 +1012,5 @@ namespace etl
                1U + sizeof...(Ts)>;
 #endif 
 }
-
-#undef ETL_FILE
 
 #endif

@@ -54,9 +54,6 @@ SOFTWARE.
 
 #include "private/minmax_push.h"
 
-#undef ETL_FILE
-#define ETL_FILE "10"
-
 //*****************************************************************************
 /// A multiset with the capacity defined at compile time.
 ///\ingroup containers
@@ -87,7 +84,7 @@ namespace etl
   public:
 
     multiset_full(string_type file_name_, numeric_type line_number_)
-      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:full", ETL_FILE"A"), file_name_, line_number_)
+      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:full", ETL_MULTISET_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -101,7 +98,7 @@ namespace etl
   public:
 
     multiset_out_of_bounds(string_type file_name_, numeric_type line_number_)
-      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:bounds", ETL_FILE"B"), file_name_, line_number_)
+      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:bounds", ETL_MULTISET_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -115,7 +112,7 @@ namespace etl
   public:
 
     multiset_iterator(string_type file_name_, numeric_type line_number_)
-      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:iterator", ETL_FILE"C"), file_name_, line_number_)
+      : etl::multiset_exception(ETL_ERROR_TEXT("multiset:iterator", ETL_MULTISET_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -784,32 +781,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return imultiset::data_cast(p_node)->value;
       }
 
-      const_reference operator *() const
-      {
-        return imultiset::data_cast(p_node)->value;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return &(imultiset::data_cast(p_node)->value);
       }
 
-      const_pointer operator &() const
-      {
-        return &(imultiset::data_cast(p_node)->value);
-      }
-
-      pointer operator ->()
-      {
-        return &(imultiset::data_cast(p_node)->value);
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(imultiset::data_cast(p_node)->value);
       }
@@ -2024,7 +2006,7 @@ namespace etl
   {
   public:
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Default constructor.
@@ -2069,7 +2051,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     multiset(TIterator first, TIterator last)
       : etl::imultiset<TKey, TCompare>(node_pool, MAX_SIZE)
     {
@@ -2229,7 +2211,5 @@ namespace etl
 }
 
 #include "private/minmax_pop.h"
-
-#undef ETL_FILE
 
 #endif

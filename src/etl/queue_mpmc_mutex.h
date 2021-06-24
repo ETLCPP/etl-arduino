@@ -46,9 +46,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_QUEUE_MPMC_MUTEX_ID
-
 namespace etl
 {
   template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
@@ -604,7 +601,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((SIZE <= etl::integral_limits<size_type>::max), "Size too large for memory model");
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -636,8 +633,6 @@ namespace etl
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[MAX_SIZE];
   };
 }
-
-#undef ETL_FILE
 
 #endif
 #endif

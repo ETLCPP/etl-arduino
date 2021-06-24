@@ -48,9 +48,6 @@ SOFTWARE.
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
-#undef ETL_FILE
-#define ETL_FILE "53"
-
 //*****************************************************************************
 ///\defgroup indirect_vector indirect_vector
 /// A indirect_vector with the capacity defined at compile time. Objects are allocated from a pool and stored as pointers.
@@ -68,7 +65,7 @@ namespace etl
   public:
 
     indirect_vector_buffer_missmatch(string_type file_name_, numeric_type line_number_)
-      : vector_exception(ETL_ERROR_TEXT("indirect_vector:buffer_missmatch", ETL_FILE"A"), file_name_, line_number_)
+      : vector_exception(ETL_ERROR_TEXT("indirect_vector:buffer_missmatch", ETL_INDIRECT_VECTOR_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -243,32 +240,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return **lookup_itr;
       }
 
-      const_reference operator *() const
-      {
-        return **lookup_itr;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return &(**lookup_itr);
       }
 
-      const_pointer operator &() const
-      {
-        return &(**lookup_itr);
-      }
-
-      pointer operator ->()
-      {
-        return &(**lookup_itr);
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(**lookup_itr);
       }
@@ -1160,6 +1142,7 @@ namespace etl
       lookup.clear();
     }
 
+#if ETL_CPP11_SUPPORTED
     //*********************************************************************
     /// Move from a container.
     //*********************************************************************
@@ -1180,6 +1163,7 @@ namespace etl
         other.initialise();
       }
     }
+#endif
 
     etl::ivector<T*>& lookup;
     etl::ipool&       storage;
@@ -1295,7 +1279,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((MAX_SIZE_ > 0U), "Zero capacity etl::indirect_vector is not valid");
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Constructor.
@@ -1543,8 +1527,6 @@ namespace etl
 #ifdef ETL_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif
-
-#undef ETL_FILE
 
 #endif
 

@@ -36,6 +36,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include "platform.h"
+#include "algorithm.h"
 #include "type_traits.h"
 #include "integral_limits.h"
 #include "static_assert.h"
@@ -62,7 +63,7 @@ namespace etl
     static ETL_CONSTANT value_type ALL_SET   = etl::integral_limits<value_type>::max & MASK;
     static ETL_CONSTANT value_type ALL_CLEAR = 0;
 
-    static const size_t NBITS = etl::integral_limits<value_type>::bits;
+    static ETL_CONSTANT size_t NBITS = etl::integral_limits<value_type>::bits;
 
     //*************************************************************************
     /// Constructor

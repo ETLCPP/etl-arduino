@@ -72,9 +72,6 @@ cog.outl("//********************************************************************
 
 #include <stdint.h>
 
-#undef ETL_FILE
-#define ETL_FILE "55"
-
 namespace etl
 {
   /*[[[cog
@@ -193,6 +190,45 @@ namespace etl
     cog.outl("    return valid;")
     cog.outl("  }")
     cog.outl("")
+    cog.outl("  //**********************************************")
+    cog.outl("  static ETL_CONSTEXPR bool accepts(etl::message_id_t id)")
+    cog.outl("  {")
+    cog.outl("    switch (id)")
+    cog.outl("    {")
+    cog.out("      ")
+    for n in range(1, int(Handlers) + 1):
+        cog.out("case T%d::ID: " % n)
+        if n % 8 == 0:
+            cog.outl("")
+            cog.out("      ")
+    cog.outl("  return true;")
+    cog.outl("      default:")
+    cog.outl("        return false;")
+    cog.outl("    }")
+    cog.outl("  }")
+    cog.outl("")
+    cog.outl("  //**********************************************")
+    cog.outl("  static ETL_CONSTEXPR bool accepts(const etl::imessage& msg)")
+    cog.outl("  {")
+    cog.outl("    return accepts(msg.get_message_id());")
+    cog.outl("  }")
+    cog.outl("")
+    cog.outl("  //**********************************************")
+    cog.outl("  template <etl::message_id_t Id>")
+    cog.outl("  static ETL_CONSTEXPR bool accepts()")
+    cog.outl("  {")
+    cog.outl("    return accepts(Id);")
+    cog.outl("  }")
+    cog.outl("")
+    cog.outl("  //**********************************************")
+    cog.outl("  template <typename TMessage>")
+    cog.outl("  static ETL_CONSTEXPR")
+    cog.outl("  typename etl::enable_if<!etl::is_integral<TMessage>::value, bool>::type")
+    cog.outl("    accepts()")
+    cog.outl("  {")
+    cog.outl("    return accepts(TMessage::ID);")
+    cog.outl("  }")
+    cog.outl("")  
     cog.outl("  enum")
     cog.outl("  {")
     cog.out("    SIZE      = etl::largest<")
@@ -392,6 +428,46 @@ namespace etl
         cog.outl("    return valid;")
         cog.outl("  }")
         cog.outl("")
+        cog.outl("  //**********************************************")
+        cog.outl("  static ETL_CONSTEXPR bool accepts(etl::message_id_t id)")
+        cog.outl("  {")
+        cog.outl("    switch (id)")
+        cog.outl("    {")
+        cog.out("      ")
+        for t in range(1, n + 1):
+            cog.out("case T%d::ID: " % t)
+            if t % 8 == 0:
+                cog.outl("")
+                cog.out("      ")
+        cog.outl("")
+        cog.outl("        return true;")
+        cog.outl("      default:")
+        cog.outl("        return false;")
+        cog.outl("    }")
+        cog.outl("  }")
+        cog.outl("")
+        cog.outl("  //**********************************************")
+        cog.outl("  static ETL_CONSTEXPR bool accepts(const etl::imessage& msg)")
+        cog.outl("  {")
+        cog.outl("    return accepts(msg.get_message_id());")
+        cog.outl("  }")
+        cog.outl("")
+        cog.outl("  //**********************************************")
+        cog.outl("  template <etl::message_id_t Id>")
+        cog.outl("  static ETL_CONSTEXPR bool accepts()")
+        cog.outl("  {")
+        cog.outl("    return accepts(Id);")
+        cog.outl("  }")
+        cog.outl("")
+        cog.outl("  //**********************************************")
+        cog.outl("  template <typename TMessage>")
+        cog.outl("  static ETL_CONSTEXPR")
+        cog.outl("  typename etl::enable_if<!etl::is_integral<TMessage>::value, bool>::type")
+        cog.outl("    accepts()")
+        cog.outl("  {")
+        cog.outl("    return accepts(TMessage::ID);")
+        cog.outl("  }")
+        cog.outl("")
         cog.outl("  enum")
         cog.outl("  {")
         cog.out("    SIZE      = etl::largest<")
@@ -464,7 +540,5 @@ namespace etl
   ]]]*/
   /*[[[end]]]*/
 }
-
-#undef ETL_FILE
 
 #endif

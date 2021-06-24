@@ -41,9 +41,6 @@ SOFTWARE.
 #include "iterator.h"
 #include "static_assert.h"
 
-#undef ETL_FILE
-#define ETL_FILE "56"
-
 namespace etl
 {
   //***************************************************************************
@@ -67,7 +64,7 @@ namespace etl
   public:
 
     circular_buffer_empty(string_type file_name_, numeric_type line_number_)
-      : etl::circular_buffer_exception(ETL_ERROR_TEXT("circular_buffer:empty", ETL_FILE"A"), file_name_, line_number_)
+      : etl::circular_buffer_exception(ETL_ERROR_TEXT("circular_buffer:empty", ETL_CIRCULAR_BUFFER_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -194,15 +191,7 @@ namespace etl
       //*************************************************************************
       /// * operator
       //*************************************************************************
-      reference operator *()
-      {
-        return picb->pbuffer[current];
-      }
-
-      //*************************************************************************
-      /// * operator
-      //*************************************************************************
-      const_reference operator *() const
+      reference operator *() const
       {
         return picb->pbuffer[current];
       }
@@ -210,15 +199,7 @@ namespace etl
       //*************************************************************************
       /// -> operator
       //*************************************************************************
-      pointer operator ->()
-      {
-        return picb->pbuffer[current];
-      }
-
-      //*************************************************************************
-      /// -> operator
-      //*************************************************************************
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return picb->pbuffer[current];
       }
@@ -831,7 +812,7 @@ namespace etl
     //*************************************************************************
     /// Get a reference to the item.
     //*************************************************************************
-    reference operator [](int index)
+    reference operator [](size_t index)
     {
       return pbuffer[(out + index) % BUFFER_SIZE];
     }
@@ -840,7 +821,7 @@ namespace etl
     /// Get a const reference to the item at the back of the buffer.
     /// Asserts an error if the buffer is empty.
     //*************************************************************************
-    const_reference operator [](int index) const
+    const_reference operator [](size_t index) const
     {
       return pbuffer[(out + index) % BUFFER_SIZE];
     }
@@ -984,7 +965,7 @@ namespace etl
     //*************************************************************************
     /// Protected constructor.
     //*************************************************************************
-    icircular_buffer<T>(pointer pbuffer_, size_type max_length)
+    icircular_buffer(pointer pbuffer_, size_type max_length)
       : circular_buffer_base(max_length + 1U)
       , pbuffer(pbuffer_)
     {
@@ -1067,8 +1048,8 @@ namespace etl
     /// Constructor.
     /// Constructs a buffer from an iterator range.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    circular_buffer(TIterator first, const TIterator& last)
+    template <typename TIterator>
+    circular_buffer(TIterator first, const TIterator& last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE)
     {
       while (first != last)
@@ -1107,6 +1088,7 @@ namespace etl
     {
       if (this != &other)
       {
+        this->clear();
         this->push(other.begin(), other.end());
       }
 
@@ -1138,8 +1120,10 @@ namespace etl
     {
       if (this != &other)
       {
+        this->clear();
+
         for (typename etl::icircular_buffer<T>::const_iterator itr = other.begin(); itr != other.end(); ++itr)
-        {
+        {          
           this->push(etl::move(*itr));
         }
       }
@@ -1184,8 +1168,8 @@ namespace etl
     /// Constructor.
     /// Constructs a buffer from an iterator range.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    circular_buffer_ext(TIterator first, const TIterator& last, void* buffer, size_t max_size)
+    template <typename TIterator>
+    circular_buffer_ext(TIterator first, const TIterator& last, void* buffer, size_t max_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
     {
       while (first != last)
@@ -1222,8 +1206,10 @@ namespace etl
     //*************************************************************************
     circular_buffer_ext& operator =(const circular_buffer_ext& other)
     {
+
       if (this != &other)
       {
+        this->clear();
         this->push(other.begin(), other.end());
       }
 
@@ -1255,8 +1241,10 @@ namespace etl
     {
       if (this != &other)
       {
+        this->clear();
+
         for (typename etl::icircular_buffer<T>::iterator itr = other.begin(); itr != other.end(); ++itr)
-        {
+        {          
           this->push(etl::move(*itr));
         }
       }
@@ -1322,7 +1310,5 @@ namespace etl
     return !(lhs == rhs);
   }
 }
-
-#undef ETL_FILE
 
 #endif

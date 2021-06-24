@@ -55,9 +55,6 @@ SOFTWARE.
 
 #include "private/minmax_push.h"
 
-#undef ETL_FILE
-#define ETL_FILE "8"
-
 //*****************************************************************************
 ///\defgroup map map
 /// A map with the capacity defined at compile time.
@@ -89,7 +86,7 @@ namespace etl
   public:
 
     map_full(string_type file_name_, numeric_type line_number_)
-      : etl::map_exception("map:full", file_name_, line_number_)
+      : etl::map_exception(ETL_ERROR_TEXT("map:full", ETL_MAP_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -103,7 +100,7 @@ namespace etl
   public:
 
     map_out_of_bounds(string_type file_name_, numeric_type line_number_)
-      : etl::map_exception("map:bounds", file_name_, line_number_)
+      : etl::map_exception(ETL_ERROR_TEXT("map:bounds", ETL_MAP_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -117,7 +114,7 @@ namespace etl
   public:
 
     map_iterator(string_type file_name_, numeric_type line_number_)
-      : etl::map_exception("map:iterator", file_name_, line_number_)
+      : etl::map_exception(ETL_ERROR_TEXT("map:iterator", ETL_MAP_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -644,32 +641,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return imap::data_cast(p_node)->value;
       }
 
-      const_reference operator *() const
-      {
-        return imap::data_cast(p_node)->value;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return &(imap::data_cast(p_node)->value);
       }
 
-      const_pointer operator &() const
-      {
-        return &(imap::data_cast(p_node)->value);
-      }
-
-      pointer operator ->()
-      {
-        return &(imap::data_cast(p_node)->value);
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(imap::data_cast(p_node)->value);
       }
@@ -1339,7 +1321,7 @@ namespace etl
     key_compare key_comp() const
     {
       return kcompare;
-    };
+    }
 
     //*************************************************************************
     /// How to compare two value elements.
@@ -1347,7 +1329,7 @@ namespace etl
     value_compare value_comp() const
     {
       return vcompare;
-    };
+    }
 
   protected:
 
@@ -2178,7 +2160,7 @@ namespace etl
   {
   public:
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Default constructor.
@@ -2226,7 +2208,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     map(TIterator first, TIterator last)
       : etl::imap<TKey, TValue, TCompare>(node_pool, MAX_SIZE)
     {
@@ -2386,7 +2368,5 @@ namespace etl
 }
 
 #include "private/minmax_pop.h"
-
-#undef ETL_FILE
 
 #endif

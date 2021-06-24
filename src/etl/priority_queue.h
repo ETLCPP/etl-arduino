@@ -45,9 +45,6 @@ SOFTWARE.
 #include "error_handler.h"
 #include "exception.h"
 
-#undef ETL_FILE
-#define ETL_FILE "12"
-
 //*****************************************************************************
 ///\defgroup queue queue
 /// A priority queue with the capacity defined at compile time,
@@ -80,7 +77,7 @@ namespace etl
   public:
 
     priority_queue_full(string_type file_name_, numeric_type line_number_)
-      : priority_queue_exception(ETL_ERROR_TEXT("priority_queue:full", ETL_FILE"A"), file_name_, line_number_)
+      : priority_queue_exception(ETL_ERROR_TEXT("priority_queue:full", ETL_PRIORITY_QUEUE_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -94,7 +91,7 @@ namespace etl
   public:
 
     priority_queue_iterator(string_type file_name_, numeric_type line_number_)
-      : priority_queue_exception(ETL_ERROR_TEXT("priority_queue:iterator", ETL_FILE"B"), file_name_, line_number_)
+      : priority_queue_exception(ETL_ERROR_TEXT("priority_queue:iterator", ETL_PRIORITY_QUEUE_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -421,8 +418,9 @@ namespace etl
   public:
 
     typedef typename TContainer::size_type size_type;
+    typedef TContainer                     container_type;
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -458,7 +456,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     priority_queue(TIterator first, TIterator last)
       : etl::ipriority_queue<T, TContainer, TCompare>()
     {
@@ -502,7 +500,5 @@ namespace etl
 #endif
   };
 }
-
-#undef ETL_FILE
 
 #endif

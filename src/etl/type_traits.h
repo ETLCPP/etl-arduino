@@ -560,23 +560,23 @@ namespace etl
 
   //***************************************************************************
   /// extent
-  template <typename T, size_t MAXN = 0U>
+  template <typename T, unsigned MAXN = 0U>
   struct extent : integral_constant<size_t, 0U> {};
 
   template <typename T>
   struct extent<T[], 0> : integral_constant<size_t, 0U> {};
 
-  template <typename T, size_t MAXN>
+  template <typename T, unsigned MAXN>
   struct extent<T[], MAXN> : integral_constant<size_t, extent<T, MAXN - 1>::value> {};
 
-  template <typename T, size_t MAXN>
+  template <typename T, unsigned MAXN>
   struct extent<T[MAXN], 0> : integral_constant<size_t, MAXN> {};
 
-  template <typename T, size_t I, size_t MAXN>
+  template <typename T, unsigned I, unsigned MAXN>
   struct extent<T[I], MAXN> : integral_constant<size_t, extent<T, MAXN - 1>::value> {};
 
 #if ETL_CPP17_SUPPORTED
-  template <typename T, size_t N = 0U>
+  template <typename T, unsigned N = 0U>
   inline constexpr size_t extent_v = extent<T, N>::value;
 #endif
 
@@ -820,7 +820,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_reference_t = std::remove_reference_t<T>;
+  using remove_reference_t = typename std::remove_reference<T>::type;
 #endif
 
   //***************************************************************************
@@ -830,7 +830,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_pointer_t = std::remove_pointer_t<T>;
+  using remove_pointer_t = typename std::remove_pointer<T>::type;
 #endif
 
   //***************************************************************************
@@ -840,7 +840,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_pointer_t = std::add_pointer_t<T>;
+  using add_pointer_t = typename std::add_pointer<T>::type;
 #endif
 
   //***************************************************************************
@@ -860,7 +860,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_const_t = std::remove_const_t<T>;
+  using remove_const_t = typename std::remove_const<T>::type;
 #endif
 
   //***************************************************************************
@@ -870,7 +870,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_const_t = std::add_const_t<T>;
+  using add_const_t = typename std::add_const<T>::type;
 #endif
 
   //***************************************************************************
@@ -890,7 +890,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_volatile_t = std::remove_volatile_t<T>;
+  using remove_volatile_t = typename std::remove_volatile<T>::type;
 #endif
 
   //***************************************************************************
@@ -900,7 +900,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_volatile_t = std::add_volatile_t<T>;
+  using add_volatile_t = typename std::add_volatile<T>::type;
 #endif
 
   //***************************************************************************
@@ -910,7 +910,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_cv_t = std::remove_cv_t<T>;
+  using remove_cv_t = typename std::remove_cv<T>::type;
 #endif
 
   //***************************************************************************
@@ -920,7 +920,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_cv_t = std::add_cv_t<T>;
+  using add_cv_t = typename std::add_cv<T>::type;
 #endif
 
   //***************************************************************************
@@ -1136,51 +1136,71 @@ namespace etl
     //***************************************************************************
     /// is_trivially_constructible
     ///\ingroup type_traits
+#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+    template <typename T> struct is_trivially_constructible : std::is_trivially_constructible<T> {};
+#else
     template <typename T> struct is_trivially_constructible : std::is_pod<T> {};
+#endif
 
   #if ETL_CPP17_SUPPORTED
     template <typename T>
-    inline constexpr bool is_trivially_constructible_v = std::is_pod_v<T>;
+    inline constexpr bool is_trivially_constructible_v = etl::is_trivially_constructible<T>::value;
   #endif
 
     //***************************************************************************
     /// is_trivially_copy_constructible
     ///\ingroup type_traits
+#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+    template <typename T> struct is_trivially_copy_constructible : std::is_trivially_copy_constructible<T> {};
+#else
     template <typename T> struct is_trivially_copy_constructible : std::is_pod<T> {};
+#endif
 
   #if ETL_CPP17_SUPPORTED
     template <typename T>
-    inline constexpr bool is_trivially_copy_constructible_v = std::is_pod_v<T>;
+    inline constexpr bool is_trivially_copy_constructible_v = etl::is_trivially_copy_constructible<T>::value;
   #endif
 
     //***************************************************************************
     /// is_trivially_destructible
     ///\ingroup type_traits
+#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+    template <typename T> struct is_trivially_destructible : std::is_trivially_destructible<T> {};
+#else
     template <typename T> struct is_trivially_destructible : std::is_pod<T> {};
+#endif
 
   #if ETL_CPP17_SUPPORTED
     template <typename T>
-    inline constexpr bool is_trivially_destructible_v = std::is_pod_v<T>;
+    inline constexpr bool is_trivially_destructible_v = etl::is_trivially_destructible<T>::value;
   #endif
 
     //***************************************************************************
     /// is_trivially_copy_assignable
     ///\ingroup type_traits
+#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+    template <typename T> struct is_trivially_copy_assignable : std::is_trivially_copy_assignable<T> {};
+#else
     template <typename T> struct is_trivially_copy_assignable : std::is_pod<T> {};
+#endif
 
   #if ETL_CPP17_SUPPORTED
     template <typename T>
-    inline constexpr bool is_trivially_copy_assignable_v = std::is_pod_v<T>;
+    inline constexpr bool is_trivially_copy_assignable_v = etl::is_trivially_copy_assignable<T>::value;
   #endif
 
     //***************************************************************************
     /// is_trivially_copyable
     ///\ingroup type_traits
+#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+    template <typename T> struct is_trivially_copyable : std::is_trivially_copyable<T> {};
+#else
     template <typename T> struct is_trivially_copyable : std::is_pod<T> {};
+#endif
 
   #if ETL_CPP17_SUPPORTED
     template <typename T>
-    inline constexpr bool is_trivially_copyable_v = std::is_pod_v<T>;
+    inline constexpr bool is_trivially_copyable_v = etl::is_trivially_copyable<T>::value;
   #endif
 #endif
 
@@ -1197,7 +1217,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using make_signed_t = std::make_signed_t<T>;
+  using make_signed_t = typename std::make_signed<T>::type;
 #endif
 
   //***************************************************************************
@@ -1207,7 +1227,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using make_unsigned_t = std::make_unsigned_t<T>;
+  using make_unsigned_t = typename std::make_unsigned<T>::type;
 #endif
 
   //***************************************************************************
@@ -1217,17 +1237,17 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <bool B, typename T = void>
-  using enable_if_t = std::enable_if_t<B, T>;
+  using enable_if_t = typename std::enable_if<B, T>::type;
 #endif
 
   //***************************************************************************
   /// extent
   ///\ingroup type_traits
-  template <typename T, size_t MAXN = 0U>
+  template <typename T, unsigned MAXN = 0U>
   struct extent : std::extent<T, MAXN> {};
 
 #if ETL_CPP17_SUPPORTED
-  template <typename T, size_t MAXN = 0U>
+  template <typename T, unsigned MAXN = 0U>
   inline constexpr size_t extent_v = std::extent_v<T, MAXN>;
 #endif
 
@@ -1238,7 +1258,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_extent_t = std::remove_extent_t<T>;
+  using remove_extent_t = typename std::remove_extent<T>::type;
 #endif
 
   //***************************************************************************
@@ -1248,7 +1268,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using remove_all_extents_t = std::remove_all_extents_t<T>;
+  using remove_all_extents_t = typename std::remove_all_extents<T>::type;
 #endif
 
   //***************************************************************************
@@ -1268,7 +1288,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using decay_t = std::decay_t<T>;
+  using decay_t = typename std::decay<T>::type;
 #endif
 
   //***************************************************************************
@@ -1296,7 +1316,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_lvalue_reference_t = std::add_lvalue_reference_t<T>;
+  using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
 #endif
 
   //***************************************************************************
@@ -1307,7 +1327,7 @@ namespace etl
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
-  using add_rvalue_reference_t = std::add_rvalue_reference_t<T>;
+  using add_rvalue_reference_t = typename std::add_rvalue_reference<T>::type;
 #endif
 
   //***************************************************************************

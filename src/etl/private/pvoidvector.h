@@ -218,6 +218,17 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Resizes the vector, but does not initialise new entries.
+    ///\param new_size The new size.
+    //*********************************************************************
+    void uninitialized_resize(size_t new_size)
+    {
+      ETL_ASSERT(new_size <= CAPACITY, ETL_ERROR(vector_full));
+
+      p_end = p_buffer + new_size;
+    }
+
+    //*********************************************************************
     /// Returns a reference to the value at index 'i'
     ///\param i The index.
     ///\return A reference to the value at index 'i'
@@ -360,7 +371,7 @@ namespace etl
       void** p_first = (void**)(first);
       void** p_last  = (void**)(last);
 
-      p_end = etl::copy(p_first, p_last, p_buffer);;
+      p_end = etl::copy(p_first, p_last, p_buffer);
     }
 
     //*********************************************************************

@@ -56,9 +56,6 @@ SOFTWARE.
 
 #include "private/minmax_push.h"
 
-#undef ETL_FILE
-#define ETL_FILE "6"
-
 //*****************************************************************************
 ///\defgroup forward_list forward_list
 /// A linked forward_list with the capacity defined at compile time.
@@ -90,7 +87,7 @@ namespace etl
   public:
 
     forward_list_full(string_type file_name_, numeric_type line_number_)
-      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:full", ETL_FILE"A"), file_name_, line_number_)
+      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:full", ETL_FORWARD_LIST_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -104,7 +101,7 @@ namespace etl
   public:
 
     forward_list_empty(string_type file_name_, numeric_type line_number_)
-      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:empty", ETL_FILE"B"), file_name_, line_number_)
+      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:empty", ETL_FORWARD_LIST_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -118,7 +115,7 @@ namespace etl
   public:
 
     forward_list_iterator(string_type file_name_, numeric_type line_number_)
-      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:iterator", ETL_FILE"C"), file_name_, line_number_)
+      : etl::forward_list_exception(ETL_ERROR_TEXT("forward_list:iterator", ETL_FORWARD_LIST_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -132,7 +129,7 @@ namespace etl
   public:
 
     forward_list_no_pool(string_type file_name_, numeric_type line_number_)
-      : forward_list_exception(ETL_ERROR_TEXT("list:no pool", ETL_FILE"D"), file_name_, line_number_)
+      : forward_list_exception(ETL_ERROR_TEXT("list:no pool", ETL_FORWARD_LIST_FILE_ID"D"), file_name_, line_number_)
     {
     }
   };
@@ -442,32 +439,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return iforward_list::data_cast(p_node)->value;
       }
 
-      const_reference operator *() const
-      {
-        return iforward_list::data_cast(p_node)->value;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return &(iforward_list::data_cast(p_node)->value);
       }
 
-      const_pointer operator &() const
-      {
-        return &(iforward_list::data_cast(p_node)->value);
-      }
-
-      pointer operator ->()
-      {
-        return &(iforward_list::data_cast(p_node)->value);
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(iforward_list::data_cast(p_node)->value);
       }
@@ -1624,7 +1606,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((MAX_SIZE_ > 0U), "Zero capacity etl::forward_list is not valid");
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
   public:
 
@@ -1676,8 +1658,8 @@ namespace etl
     //*************************************************************************
     /// Construct from range.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    forward_list(TIterator first, TIterator last)
+    template <typename TIterator>
+    forward_list(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::iforward_list<T>(node_pool, MAX_SIZE, false)
     {
       this->assign(first, last);
@@ -1837,8 +1819,8 @@ namespace etl
     //*************************************************************************
     /// Construct from range.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    forward_list_ext(TIterator first, TIterator last, etl::ipool& node_pool)
+    template <typename TIterator>
+    forward_list_ext(TIterator first, TIterator last, etl::ipool& node_pool, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(first, last);
@@ -1990,7 +1972,5 @@ namespace etl
 }
 
 #include "private/minmax_pop.h"
-
-#undef ETL_FILE
 
 #endif

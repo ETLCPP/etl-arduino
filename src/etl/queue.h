@@ -48,9 +48,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE "13"
-
 //*****************************************************************************
 ///\defgroup queue queue
 /// A First-in / first-out queue with the capacity defined at compile time,
@@ -83,7 +80,7 @@ namespace etl
   public:
 
     queue_full(string_type file_name_, numeric_type line_number_)
-      : queue_exception(ETL_ERROR_TEXT("queue:full", ETL_FILE"A"), file_name_, line_number_)
+      : queue_exception(ETL_ERROR_TEXT("queue:full", ETL_QUEUE_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -97,7 +94,7 @@ namespace etl
   public:
 
     queue_empty(string_type file_name_, numeric_type line_number_)
-      : queue_exception(ETL_ERROR_TEXT("queue:empty", ETL_FILE"B"), file_name_, line_number_)
+      : queue_exception(ETL_ERROR_TEXT("queue:empty", ETL_QUEUE_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -587,11 +584,12 @@ namespace etl
 
   public:
 
-    typedef typename base_t::size_type size_type;
+    typedef typename base_t::size_type                                                  size_type;
+    typedef typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type container_type;
 
     ETL_STATIC_ASSERT((SIZE <= etl::integral_limits<size_type>::max), "Size too large for memory model");
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -660,10 +658,8 @@ namespace etl
   private:
 
     /// The uninitialised buffer of T used in the queue.
-    typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[SIZE];
+    container_type buffer[SIZE];
   };
 }
-
-#undef ETL_FILE
 
 #endif

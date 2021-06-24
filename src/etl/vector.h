@@ -52,6 +52,7 @@ SOFTWARE.
 #include "functional.h"
 #include "static_assert.h"
 #include "placement_new.h"
+#include "algorithm.h"
 
 #if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
@@ -244,6 +245,28 @@ namespace etl
         etl::destroy_n(p_end - delta, delta);
         ETL_SUBTRACT_DEBUG_COUNT(delta)
       }
+
+      p_end = p_buffer + new_size;
+    }
+
+    //*********************************************************************
+    /// Resizes the vector, but does not initialise new entries.
+    ///\param new_size The new size.
+    //*********************************************************************
+    void uninitialized_resize(size_t new_size)
+    {
+      ETL_ASSERT(new_size <= CAPACITY, ETL_ERROR(vector_full));
+
+#if defined(ETL_DEBUG_COUNT)
+      if (size() < new_size)
+      {
+        ETL_ADD_DEBUG_COUNT(new_size - size())
+      }
+      else
+      {
+        ETL_SUBTRACT_DEBUG_COUNT(size() - new_size)
+      }
+#endif
 
       p_end = p_buffer + new_size;
     }
@@ -1171,8 +1194,8 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    vector(TIterator first, TIterator last)
+    template <typename TIterator>
+    vector(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::ivector<T>(reinterpret_cast<T*>(&buffer), MAX_SIZE)
     {
       this->assign(first, last);
@@ -1274,9 +1297,7 @@ namespace etl
       ETL_OVERRIDE
 #endif
     {
-      #if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
       ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::vector_incompatible_type));
-      #endif
 
       etl::ivector<T>::repair_buffer(buffer);
     }
@@ -1344,8 +1365,8 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    vector_ext(TIterator first, TIterator last, void* buffer, size_t max_size)
+    template <typename TIterator>
+    vector_ext(TIterator first, TIterator last, void* buffer, size_t max_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::ivector<T>(reinterpret_cast<T*>(buffer), max_size)
     {
       this->assign(first, last);
@@ -1445,9 +1466,7 @@ namespace etl
       ETL_OVERRIDE
 #endif
     {
-#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
       ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::vector_incompatible_type));
-#endif
 
       etl::ivector<T>::repair_buffer(this->p_buffer);
     }
@@ -1506,8 +1525,8 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    vector(TIterator first, TIterator last)
+    template <typename TIterator>
+    vector(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::ivector<T*>(reinterpret_cast<T**>(&buffer), MAX_SIZE)
     {
       this->assign(first, last);
@@ -1638,8 +1657,8 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    vector_ext(TIterator first, TIterator last, void* buffer, size_t max_size)
+    template <typename TIterator>
+    vector_ext(TIterator first, TIterator last, void* buffer, size_t max_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : etl::ivector<T*>(reinterpret_cast<T**>(buffer), max_size)
     {
       this->assign(first, last);
@@ -1715,6 +1734,34 @@ namespace etl
       etl::ivector<T*>::repair_buffer(this->p_buffer);
     }
   };
+
+  //***************************************************************************
+  /// erase
+  //***************************************************************************
+  template <typename T, typename U>
+  typename etl::ivector<T>::difference_type
+  erase(etl::ivector<T>& v, const U& value)
+  {
+    typename etl::ivector<T>::iterator itr = etl::remove(v.begin(), v.end(), value);
+    typename etl::ivector<T>::difference_type d = etl::distance(itr, v.end());
+    v.erase(itr, v.end());
+
+    return d;
+  }
+
+  //***************************************************************************
+  /// erase_if
+  //***************************************************************************
+  template <typename T, typename TPredicate>
+  typename etl::ivector<T>::difference_type
+  erase_if(etl::ivector<T>& v, TPredicate predicate)
+  {
+    typename etl::ivector<T>::iterator itr = etl::remove_if(v.begin(), v.end(), predicate);
+    typename etl::ivector<T>::difference_type d = etl::distance(itr, v.end());
+    v.erase(itr, v.end());
+
+    return d;
+  }
 }
 
 #ifdef ETL_COMPILER_GCC

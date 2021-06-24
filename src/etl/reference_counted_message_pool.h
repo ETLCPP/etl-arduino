@@ -43,9 +43,6 @@ SOFTWARE.
 #include "memory.h"
 #include "largest.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_REFERENCE_COUNTER_MESSAGE_POOL_ID
-
 namespace etl
 {
   //***************************************************************************
@@ -69,7 +66,7 @@ namespace etl
   public:
 
     reference_counted_message_pool_allocation_failure(string_type file_name_, numeric_type line_number_)
-      : reference_counted_message_pool_exception(ETL_ERROR_TEXT("reference_counted_message_pool:allocation failure", ETL_FILE"A"), file_name_, line_number_)
+      : reference_counted_message_pool_exception(ETL_ERROR_TEXT("reference_counted_message_pool:allocation failure", ETL_REFERENCE_COUNTER_MESSAGE_POOL_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -82,7 +79,7 @@ namespace etl
   public:
 
     reference_counted_message_pool_release_failure(string_type file_name_, numeric_type line_number_)
-      : reference_counted_message_pool_exception(ETL_ERROR_TEXT("reference_counted_message_pool:release failure", ETL_FILE"B"), file_name_, line_number_)
+      : reference_counted_message_pool_exception(ETL_ERROR_TEXT("reference_counted_message_pool:release failure", ETL_REFERENCE_COUNTER_MESSAGE_POOL_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -226,7 +223,7 @@ namespace etl
       ETL_STATIC_ASSERT((etl::is_base_of<etl::imessage, TMessage1>::value), "TMessage7 not derived from etl::imessage");
       ETL_STATIC_ASSERT((etl::is_base_of<etl::imessage, TMessage1>::value), "TMessage8 not derived from etl::imessage");
 
-      static const size_t max_size = etl::largest<etl::reference_counted_message<TMessage1, TCounter>,
+      static ETL_CONSTANT size_t max_size = etl::largest<etl::reference_counted_message<TMessage1, TCounter>,
                                                   etl::reference_counted_message<TMessage2, TCounter>,
                                                   etl::reference_counted_message<TMessage3, TCounter>,
                                                   etl::reference_counted_message<TMessage4, TCounter>,
@@ -236,7 +233,7 @@ namespace etl
                                                   etl::reference_counted_message<TMessage8, TCounter> >::size;
 
 
-      static const size_t max_alignment = etl::largest<etl::reference_counted_message<TMessage1, TCounter>,
+      static ETL_CONSTANT size_t max_alignment = etl::largest<etl::reference_counted_message<TMessage1, TCounter>,
                                                        etl::reference_counted_message<TMessage2, TCounter>,
                                                        etl::reference_counted_message<TMessage3, TCounter>,
                                                        etl::reference_counted_message<TMessage4, TCounter>,
@@ -261,7 +258,5 @@ namespace etl
   using  atomic_counted_message_pool = reference_counted_message_pool<etl::atomic_int>;
 #endif
 }
-
-#undef ETL_FILE
 
 #endif

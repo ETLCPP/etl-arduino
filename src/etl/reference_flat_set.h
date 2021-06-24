@@ -47,9 +47,6 @@ SOFTWARE.
 #include "vector.h"
 #include "iterator.h"
 
-#undef ETL_FILE
-#define ETL_FILE "32"
-
 namespace etl
 {
   //***************************************************************************
@@ -75,7 +72,7 @@ namespace etl
   public:
 
     flat_set_full(string_type file_name_, numeric_type line_number_)
-      : flat_set_exception(ETL_ERROR_TEXT("flat_set:full", ETL_FILE"A"), file_name_, line_number_)
+      : flat_set_exception(ETL_ERROR_TEXT("flat_set:full", ETL_REFERENCE_FLAT_SET_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -89,7 +86,7 @@ namespace etl
   public:
 
     flat_set_iterator(string_type file_name_, numeric_type line_number_)
-      : flat_set_exception(ETL_ERROR_TEXT("flat_set:iterator", ETL_FILE"C"), file_name_, line_number_)
+      : flat_set_exception(ETL_ERROR_TEXT("flat_set:iterator", ETL_REFERENCE_FLAT_SET_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -173,32 +170,17 @@ namespace etl
         return temp;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return *(*ilookup);
       }
 
-      const_reference operator *() const
-      {
-        return *(*ilookup);
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return etl::addressof(*(*ilookup));
       }
 
-      const_pointer operator &() const
-      {
-        return &(*(*ilookup));
-      }
-
-      pointer operator ->()
-      {
-        return etl::addressof(*(*ilookup));
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return etl::addressof(*(*ilookup));
       }
@@ -794,7 +776,7 @@ namespace etl
   {
   public:
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Constructor.
@@ -819,7 +801,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     reference_flat_set(TIterator first, TIterator last)
       : ireference_flat_set<TKey, TKeyCompare>(lookup)
     {
@@ -869,5 +851,4 @@ namespace etl
   }
 }
 
-#undef ETL_FILE
 #endif
