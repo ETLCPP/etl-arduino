@@ -14,5 +14,40 @@ https://github.com/ETLCPP/etl
 
 See (https://www.etlcpp.com/arduino.html) for up-to-date information.
 
+To update this repository:
+
+- start from a "master folder", for example in my case ```~/Desktop/Jean/Git```.
+- from this "master folder", have a clone of both the etl repository (https://github.com/ETLCPP/etl or a clone of it), and the etl-arduino repository (https://github.com/ETLCPP/etl-arduino or a clone of if).
+- from the etl-arduino repository, run the etl repository ```arduino/create_arduino_library.py``` script.
+
+For example, on my machine:
+
+```
+jj@MBX20:~/Desktop/Jean/Git$ ls -d etl*
+etl  etl-arduino
+jj@MBX20:~/Desktop/Jean/Git$ cd etl-arduino/
+jj@MBX20:~/Desktop/Jean/Git/etl-arduino$ python3 ../etl/arduino/create_arduino_library.py 
+
+Copy ETL files to the etl-arduino repository
+
+arduino_dir         =  ../etl/arduino
+etl_dir             =  ../etl
+include_dir         =  ../etl/include
+common_dir          =  ..
+etl_arduino_dir     =  ../etl-arduino
+etl_arduino_src_dir =  ../etl-arduino/src
+
+Copy the library properties
+  From : ../etl/library.properties
+  To   : ../etl-arduino/library.properties
+
+Copy the Arduino ETL header
+  From : ../etl/arduino/Embedded_Template_Library.h
+  To   : ../etl-arduino/src/Embedded_Template_Library.h
+
+Copy the ETL headers
+  From : ../etl/include
+  To   : ../etl-arduino/src
+```
 
 
