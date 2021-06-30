@@ -14,10 +14,10 @@ https://github.com/ETLCPP/etl
 
 See (https://www.etlcpp.com/arduino.html) for up-to-date information.
 
-To update this repository:
+To update this repository locally on your machine:
 
-- start from a "master folder", for example in my case ```~/Desktop/Jean/Git```.
-- from this "master folder", have a clone of both the etl repository (https://github.com/ETLCPP/etl or a clone of it), and the etl-arduino repository (https://github.com/ETLCPP/etl-arduino or a clone of if).
+- start from a "master folder", for example in my case in the following example: ```~/Desktop/Jean/Git```.
+- from this "master folder", have a clone of both the etl repository (https://github.com/ETLCPP/etl or a fork of it), and the etl-arduino repository (https://github.com/ETLCPP/etl-arduino or a fork of it).
 - from the etl-arduino repository, run the etl repository ```arduino/create_arduino_library.py``` script.
 
 For example, on my machine:
@@ -50,4 +50,5 @@ Copy the ETL headers
   To   : ../etl-arduino/src
 ```
 
+At this point, you will then get the latest arduino-etl derived from the etl repo.
 
