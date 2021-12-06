@@ -41,10 +41,11 @@ SOFTWARE.
 #include "array.h"
 
 ///\defgroup span span
-/// A wrapper for arrays
 ///\ingroup containers
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_CPP11_SUPPORTED && ETL_USING_STL
+  #include <array>
+#endif
 
 namespace etl
 {
@@ -82,22 +83,44 @@ namespace etl
     }
 
     //*************************************************************************
-    /// Construct from std::array or etl::array or other type that supports
+    /// Construct from etl::array.
+    //*************************************************************************
+    template <typename U, size_t N>
+    ETL_CONSTEXPR span(const etl::array<U, N>& a) ETL_NOEXCEPT
+      : mbegin(a.data())
+      , mend(a.data() + a.size())
+    {
+    }
+
+#if ETL_CPP11_SUPPORTED && ETL_USING_STL
+    //*************************************************************************
+    /// Construct from std::array.
+    //*************************************************************************
+    template <typename U, size_t N>
+    ETL_CONSTEXPR span(const std::array<U, N>& a) ETL_NOEXCEPT
+      : mbegin(a.data())
+      , mend(a.data() + a.size())
+    {
+    }
+#endif
+
+    //*************************************************************************
+    /// Construct from a container or other type that supports
     /// data() and size() member functions.
     //*************************************************************************
-    template <typename TSpan>
-    ETL_CONSTEXPR span(TSpan& a) ETL_NOEXCEPT
+    template <typename TContainer>
+    ETL_CONSTEXPR span(TContainer& a) ETL_NOEXCEPT
       : mbegin(a.data())
       , mend(a.data() + a.size())
     {
     }
 
     //*************************************************************************
-    /// Construct from std::array or etl::array or other type that supports
+    /// Construct from a container or other type that supports
     /// data() and size() member functions.
     //*************************************************************************
-    template <typename TSpan>
-    ETL_CONSTEXPR span(const TSpan& a) ETL_NOEXCEPT
+    template <typename TContainer>
+    ETL_CONSTEXPR span(const TContainer& a) ETL_NOEXCEPT
       : mbegin(a.data())
       , mend(a.data() + a.size())
     {
@@ -282,6 +305,7 @@ namespace etl
       return etl::span<element_type, etl::dynamic_extent>(mend - count, mend);
     }
 
+#if ETL_CPP11_SUPPORTED
     //*************************************************************************
     /// Obtains a span that is a view from OFFSET over the next COUNT elements of this span.
     /// Enabled for COUNT == etl::dynamic_extent
@@ -305,6 +329,31 @@ namespace etl
     {
       return etl::span<element_type, COUNT>(mbegin + OFFSET, mbegin + OFFSET + COUNT);
     }
+#else
+    //*************************************************************************
+    /// Obtains a span that is a view from OFFSET over the next COUNT elements of this span.
+    /// Enabled for COUNT == etl::dynamic_extent
+    //*************************************************************************
+    template <const size_t OFFSET, const size_t COUNT>
+    ETL_CONSTEXPR
+      typename etl::enable_if<COUNT == etl::dynamic_extent, etl::span<element_type, ((EXTENT != etl::dynamic_extent) ? EXTENT - OFFSET : etl::dynamic_extent)> >::type
+      subspan() const
+    {
+      return etl::span<element_type, ((EXTENT != etl::dynamic_extent) ? EXTENT - OFFSET : etl::dynamic_extent)>(mbegin + OFFSET, mend);
+    }
+
+    //*************************************************************************
+    /// Obtains a span that is a view from OFFSET over the next COUNT elements of this span.
+    /// Enabled for COUNT != etl::dynamic_extent
+    //*************************************************************************
+    template <const size_t OFFSET, const size_t COUNT>
+    ETL_CONSTEXPR
+      typename etl::enable_if<COUNT != etl::dynamic_extent, etl::span<element_type, COUNT> >::type
+      subspan() const
+    {
+      return etl::span<element_type, COUNT>(mbegin + OFFSET, mbegin + OFFSET + COUNT);
+    }
+#endif
 
     //*************************************************************************
     /// Obtains a span that is a view from 'offset' over the next 'count' elements of this span.
@@ -325,8 +374,8 @@ namespace etl
   };
 
   //*************************************************************************
-/// Template deduction guides.
-//*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
 #if ETL_CPP17_SUPPORTED
   template <typename TArray>
   span(TArray& a)
@@ -357,8 +406,6 @@ namespace etl
   };
 #endif
 }
-
-#endif
 
 #endif
 

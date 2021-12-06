@@ -36,7 +36,6 @@ SOFTWARE.
 #include "error_handler.h"
 #include "exception.h"
 #include "hash.h"
-#include "container.h"
 #include "parameter_type.h"
 
 #include "algorithm.h"
@@ -319,7 +318,7 @@ namespace etl
     {
       using ETL_OR_STD::swap; // Allow ADL
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         swap(ARRAY_[i], other.begin()[i]);
       }

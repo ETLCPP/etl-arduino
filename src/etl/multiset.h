@@ -38,13 +38,13 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "parameter_type.h"
-#include "container.h"
 #include "pool.h"
 #include "exception.h"
 #include "error_handler.h"
 #include "debug_count.h"
 #include "nullptr.h"
 #include "type_traits.h"
+#include "nth_type.h"
 #include "utility.h"
 #include "placement_new.h"
 
@@ -53,6 +53,7 @@ SOFTWARE.
 #endif
 
 #include "private/minmax_push.h"
+#include "private/comparator_is_transparent.h"
 
 //*****************************************************************************
 /// A multiset with the capacity defined at compile time.
@@ -195,9 +196,12 @@ namespace etl
       /// Constructor
       //***********************************************************************
       Node() :
+        parent(ETL_NULLPTR),
         weight(kNeither),
         dir(kNeither)
       {
+        children[0] = ETL_NULLPTR;
+        children[1] = ETL_NULLPTR;
       }
 
       //***********************************************************************
@@ -652,7 +656,7 @@ namespace etl
     };
 
     /// Defines the key value parameter type
-    typedef typename etl::parameter_type<TKey>::type key_parameter_t;
+    typedef const TKey& key_parameter_t;
 
     //*************************************************************************
     /// How to compare node elements.
@@ -661,14 +665,30 @@ namespace etl
     {
       return compare(node1.value, node2.value);
     }
+
     bool node_comp(const Data_Node& node, key_parameter_t key) const
     {
       return compare(node.value, key);
     }
+
     bool node_comp(key_parameter_t key, const Data_Node& node) const
     {
       return compare(key, node.value);
     }
+
+#if ETL_CPP11_SUPPORTED
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    bool node_comp(const Data_Node& node, const K& key) const
+    {
+      return compare(node.value, key);
+    }
+
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    bool node_comp(const K& key, const Data_Node& node) const
+    {
+      return compare(key, node.value);
+    }
+#endif
 
   private:
 
@@ -1059,37 +1079,64 @@ namespace etl
     size_type count(key_parameter_t key) const
     {
       return count_nodes(key);
+    } 
+    
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    size_type count(const K& key) const
+    {
+      return count_nodes(key);
     }
+#endif
 
     //*************************************************************************
     /// Returns two iterators with bounding (lower bound, upper bound) the key
     /// provided
     //*************************************************************************
-    ETL_OR_STD::pair<iterator, iterator> equal_range(const_reference key)
+    ETL_OR_STD::pair<iterator, iterator> equal_range(key_parameter_t key)
     {
-      return ETL_OR_STD::make_pair<iterator, iterator>(
-        iterator(*this, find_lower_node(root_node, key)),
-        iterator(*this, find_upper_node(root_node, key)));
+      return ETL_OR_STD::make_pair<iterator, iterator>(iterator(*this, find_lower_node(root_node, key)),
+                                                       iterator(*this, find_upper_node(root_node, key)));
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    ETL_OR_STD::pair<iterator, iterator> equal_range(const K& key)
+    {
+      return ETL_OR_STD::make_pair<iterator, iterator>(iterator(*this, find_lower_node(root_node, key)),
+                                                       iterator(*this, find_upper_node(root_node, key)));
+    }
+#endif
 
     //*************************************************************************
     /// Returns two const iterators with bounding (lower bound, upper bound)
     /// the key provided.
     //*************************************************************************
-    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(const_reference key) const
+    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(key_parameter_t key) const
     {
-      return ETL_OR_STD::make_pair<const_iterator, const_iterator>(
-        const_iterator(*this, find_lower_node(root_node, key)),
-        const_iterator(*this, find_upper_node(root_node, key)));
+      return ETL_OR_STD::make_pair<const_iterator, const_iterator>(const_iterator(*this, find_lower_node(root_node, key)),
+                                                                   const_iterator(*this, find_upper_node(root_node, key)));
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(key_parameter_t key) const
+    {
+      return ETL_OR_STD::make_pair<const_iterator, const_iterator>(const_iterator(*this, find_lower_node(root_node, key)),
+                                                                   const_iterator(*this, find_upper_node(root_node, key)));
+    }
+#endif
 
     //*************************************************************************
     /// Erases the value at the specified position.
     //*************************************************************************
-    void erase(iterator position)
+    iterator erase(iterator position)
     {
       // Remove the node by its node specified in iterator position
-      (void)erase(const_iterator(position));
+      return erase(const_iterator(position));
     }
 
     //*************************************************************************
@@ -1132,18 +1179,26 @@ namespace etl
     }
 
     //*************************************************************************
-    /// Erases a range of elements.
-    //*************************************************************************
-    iterator erase(iterator first, iterator last)
+#if ETL_CPP11_SUPPORTED
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    size_type erase(K&& key_value)
     {
-      iterator next;
-      while (first != last)
+      // Number of nodes removed
+      size_type d = 0;
+      const_iterator lower(*this, find_lower_node(root_node, etl::forward<K>(key_value)));
+      const_iterator upper(*this, find_upper_node(root_node, etl::forward<K>(key_value)));
+      while (lower != upper)
       {
-        next = erase(const_iterator(first++));
+        // Increment count for each node removed
+        ++d;
+        // Remove node using the other erase method
+        (void)erase(lower++);
       }
 
-      return next;
+      // Return the total count erased
+      return d;
     }
+#endif
 
     //*************************************************************************
     /// Erases a range of elements.
@@ -1169,6 +1224,15 @@ namespace etl
       return iterator(*this, find_node(root_node, key_value));
     }
 
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    iterator find(const K& k)
+    {
+      return iterator(*this, find_node(root_node, k));
+    }
+#endif
+
     //*********************************************************************
     /// Finds an element.
     ///\param key The key to search for.
@@ -1178,6 +1242,15 @@ namespace etl
     {
       return const_iterator(*this, find_node(root_node, key_value));
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    const_iterator find(const K& k) const
+    {
+      return const_iterator(*this, find_node(root_node, k));
+    }
+#endif
 
     //*********************************************************************
     /// Inserts a value to the multiset.
@@ -1222,32 +1295,6 @@ namespace etl
 
       // Insert node into tree and return iterator to new node location in tree
       return iterator(*this, inserted_node);
-    }
-#endif
-
-    //*********************************************************************
-    /// Inserts a value to the multiset starting at the position recommended.
-    /// If asserts or exceptions are enabled, emits set_full if the multiset is already full.
-    ///\param position The position that would precede the value to insert.
-    ///\param value    The value to insert.
-    //*********************************************************************
-    iterator insert(iterator /*position*/, const_reference value)
-    {
-      // Ignore position provided and just do a normal insert
-      return insert(value);
-    }
-
-#if ETL_CPP11_SUPPORTED
-    //*********************************************************************
-    /// Inserts a value to the multiset starting at the position recommended.
-    /// If asserts or exceptions are enabled, emits set_full if the multiset is already full.
-    ///\param position The position that would precede the value to insert.
-    ///\param value    The value to insert.
-    //*********************************************************************
-    iterator insert(iterator /*position*/, rvalue_reference value)
-    {
-      // Ignore position provided and just do a normal insert
-      return insert(etl::move(value));
     }
 #endif
 
@@ -1304,6 +1351,15 @@ namespace etl
       return iterator(*this, find_lower_node(root_node, key));
     }
 
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    iterator lower_bound(const K& key)
+    {
+      return iterator(*this, find_lower_node(root_node, key));
+    }
+#endif
+
     //*********************************************************************
     /// Returns a const_iterator pointing to the first element in the
     /// container whose key is not considered to go before the key provided
@@ -1314,6 +1370,15 @@ namespace etl
     {
       return const_iterator(*this, find_lower_node(root_node, key));
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    const_iterator lower_bound(const K& key) const
+    {
+      return const_iterator(*this, find_lower_node(root_node, key));
+    }
+#endif
 
     //*********************************************************************
     /// Returns an iterator pointing to the first element in the container
@@ -1326,6 +1391,15 @@ namespace etl
       return iterator(*this, find_upper_node(root_node, key));
     }
 
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    iterator upper_bound(const K& key)
+    {
+      return iterator(*this, find_upper_node(root_node, key));
+    }
+#endif
+
     //*********************************************************************
     /// Returns a const_iterator pointing to the first element in the
     /// container whose key is not considered to go after the key provided
@@ -1336,6 +1410,15 @@ namespace etl
     {
       return const_iterator(*this, find_upper_node(root_node, key));
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*********************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    const_iterator upper_bound(const K& key) const
+    {
+      return const_iterator(*this, find_upper_node(root_node, key));
+    }
+#endif
 
     //*************************************************************************
     /// Assignment operator.
@@ -1387,6 +1470,23 @@ namespace etl
     {
       return compare;
     };
+
+    //*************************************************************************
+    /// Check if the set contains the key.
+    //*************************************************************************
+    bool contains(key_parameter_t key) const
+    {
+      return find(key) != end();
+    }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    bool contains(const K& k) const
+    {
+      return find(k) != end();
+    }
+#endif
 
   protected:
 
@@ -1489,10 +1589,43 @@ namespace etl
       return result;
     }
 
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    size_type count_nodes(const K& key) const
+    {
+      // Number of nodes that match the key provided result
+      size_type result = 0;
+
+      // Find lower and upper nodes for the key provided
+      const Node* lower = find_lower_node(root_node, key);
+      const Node* upper = find_upper_node(root_node, key);
+
+      // Loop from lower node to upper node and find nodes that match
+      while (lower != upper)
+      {
+        // Downcast found to Data_Node class for comparison and other operations
+        const Data_Node& data_node = imultiset::data_cast(*lower);
+
+        if (!node_comp(key, data_node) && !node_comp(data_node, key))
+        {
+          // This node matches the key provided
+          ++result;
+        }
+
+        // Move on to the next node
+        next_node(lower);
+      }
+
+      // Return the number of nodes that match
+      return result;
+    }
+#endif
+
     //*************************************************************************
     /// Find the value matching the node provided
     //*************************************************************************
-    Node* find_node(Node* position, key_parameter_t key) const
+    Node* find_node(Node* position, key_parameter_t key)
     {
       Node* found = ETL_NULLPTR;
       while (position)
@@ -1521,6 +1654,40 @@ namespace etl
       // Return the node found (might be ETL_NULLPTR)
       return found;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    Node* find_node(Node* position, const K& key)
+    {
+      Node* found = ETL_NULLPTR;
+      while (position)
+      {
+        // Downcast found to Data_Node class for comparison and other operations
+        Data_Node& data_node = imultiset::data_cast(*position);
+        // Compare the node value to the current position value
+        if (node_comp(key, data_node))
+        {
+          // Keep searching for the node on the left
+          position = position->children[kLeft];
+        }
+        else if (node_comp(data_node, key))
+        {
+          // Keep searching for the node on the right
+          position = position->children[kRight];
+        }
+        else
+        {
+          // We found one, keep looking for more on the left
+          found = position;
+          position = position->children[kLeft];
+        }
+      }
+
+      // Return the node found (might be ETL_NULLPTR)
+      return found;
+    }
+#endif
 
     //*************************************************************************
     /// Find the value matching the node provided
@@ -1554,6 +1721,40 @@ namespace etl
       // Return the node found (might be ETL_NULLPTR)
       return found;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    const Node* find_node(const Node* position, const K& key) const
+    {
+      const Node* found = ETL_NULLPTR;
+      while (position)
+      {
+        // Downcast found to Data_Node class for comparison and other operations
+        const Data_Node& data_node = imultiset::data_cast(*position);
+        // Compare the node value to the current position value
+        if (node_comp(key, data_node))
+        {
+          // Keep searching for the node on the left
+          position = position->children[kLeft];
+        }
+        else if (node_comp(data_node, key))
+        {
+          // Keep searching for the node on the right
+          position = position->children[kRight];
+        }
+        else
+        {
+          // We found one, keep looking for more on the left
+          found = position;
+          position = position->children[kLeft];
+        }
+      }
+
+      // Return the node found (might be ETL_NULLPTR)
+      return found;
+    }
+#endif
 
     //*************************************************************************
     /// Find the node whose key is not considered to go before the key provided
@@ -1595,6 +1796,48 @@ namespace etl
       // Return the lower_node position found
       return lower_node;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    Node* find_lower_node(Node* position, const K& key) const
+    {
+      // Something at this position? keep going
+      Node* lower_node = ETL_NULLPTR;
+      while (position)
+      {
+        // Downcast lower node to Data_Node reference for key comparisons
+        Data_Node& data_node = imultiset::data_cast(*position);
+        // Compare the key value to the current lower node key value
+        if (node_comp(key, data_node))
+        {
+          lower_node = position;
+          if (position->children[kLeft])
+          {
+            position = position->children[kLeft];
+          }
+          else
+          {
+            // Found lowest node
+            break;
+          }
+        }
+        else if (node_comp(data_node, key))
+        {
+          position = position->children[kRight];
+        }
+        else
+        {
+          // Make note of current position, but keep looking to left for more
+          lower_node = position;
+          position = position->children[kLeft];
+        }
+      }
+
+      // Return the lower_node position found
+      return lower_node;
+    }
+#endif
 
     //*************************************************************************
     /// Find the node whose key is considered to go after the key provided
@@ -1638,6 +1881,50 @@ namespace etl
       // Return the upper node position found (might be ETL_NULLPTR)
       return upper_node;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    template <typename K, typename KC = TCompare, etl::enable_if_t<comparator_is_transparent<KC>::value, int> = 0>
+    Node* find_upper_node(Node* position, const K& key) const
+    {
+      // Keep track of parent of last upper node
+      Node* upper_node = ETL_NULLPTR;
+      // Has an equal node been found? start with no
+      bool found = false;
+      while (position)
+      {
+        // Downcast position to Data_Node reference for key comparisons
+        Data_Node& data_node = imultiset::data_cast(*position);
+        // Compare the key value to the current upper node key value
+        if (node_comp(data_node, key))
+        {
+          position = position->children[kRight];
+        }
+        else if (node_comp(key, data_node))
+        {
+          upper_node = position;
+          // If a node equal to key hasn't been found go left
+          if (!found && position->children[kLeft])
+          {
+            position = position->children[kLeft];
+          }
+          else
+          {
+            break;
+          }
+        }
+        else
+        {
+          // We found an equal item, break on next bigger item
+          found = true;
+          next_node(position);
+        }
+      }
+
+      // Return the upper node position found (might be ETL_NULLPTR)
+      return upper_node;
+    }
+#endif
 
     //*************************************************************************
     /// Insert a node.
@@ -2058,7 +2345,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -2122,11 +2409,21 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  template <typename T, typename... Ts>
-  multiset(T, Ts...)
-    ->multiset<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
-#endif 
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename... T>
+  multiset(T...) -> multiset<etl::nth_type_t<0, T...>, sizeof...(T)>;
+#endif
+
+  //*************************************************************************
+  /// Make
+  //*************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename TKey, typename TKeyCompare = etl::less<TKey>, typename... T>
+  constexpr auto make_multiset(T&&... keys) -> etl::multiset<TKey, sizeof...(T), TKeyCompare>
+  {
+    return { {etl::forward<T>(keys)...} };
+  }
+#endif
 
   //***************************************************************************
   /// Equal operator.

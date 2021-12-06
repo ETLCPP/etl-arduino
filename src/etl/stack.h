@@ -37,7 +37,7 @@ SOFTWARE.
 #include "platform.h"
 #include "algorithm.h"
 #include "utility.h"
-#include "container.h"
+#include "iterator.h"
 #include "alignment.h"
 #include "array.h"
 #include "exception.h"
@@ -398,7 +398,7 @@ namespace etl
     //*************************************************************************
     void pop_into(reference destination)
     {
-      destination = top();
+      destination = ETL_MOVE(top());
       pop();
     }
 
@@ -410,7 +410,7 @@ namespace etl
     template <typename TContainer>
     void pop_into(TContainer& destination)
     {
-      destination.push(top());
+      destination.push(ETL_MOVE(top()));
       pop();
     }
 
@@ -443,7 +443,7 @@ namespace etl
     istack& operator = (istack&& rhs)
     {
       if (&rhs != this)
-      {        
+      {
         clone(etl::move(rhs));
       }
 
@@ -460,9 +460,9 @@ namespace etl
     {
       clear();
 
-      size_t index = 0;
+      size_t index = 0UL;
 
-      for (size_t i = 0; i < other.size(); ++i)
+      for (size_t i = 0UL; i < other.size(); ++i)
       {
         push(other.p_buffer[index++]);
       }
@@ -476,9 +476,9 @@ namespace etl
     {
       clear();
 
-      size_t index = 0;
+      size_t index = 0UL;
 
-      for (size_t i = 0; i < other.size(); ++i)
+      for (size_t i = 0UL; i < other.size(); ++i)
       {
         push(etl::move(other.p_buffer[index++]));
       }

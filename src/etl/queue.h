@@ -35,7 +35,7 @@ SOFTWARE.
 #include <stdint.h>
 
 #include "platform.h"
-#include "container.h"
+#include "iterator.h"
 #include "alignment.h"
 #include "array.h"
 #include "exception.h"
@@ -452,7 +452,7 @@ namespace etl
     //*************************************************************************
     void pop_into(reference destination)
     {
-      destination = front();
+      destination = ETL_MOVE(front());
       pop();
     }
 
@@ -465,7 +465,7 @@ namespace etl
     template <typename TContainer>
     void pop_into(TContainer& destination)
     {
-      destination.push(front());
+      destination.push(ETL_MOVE(front()));
       pop();
     }
 

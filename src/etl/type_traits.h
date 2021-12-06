@@ -123,6 +123,9 @@ namespace etl
   /// remove_reference
   template <typename T> struct remove_reference { typedef T type; };
   template <typename T> struct remove_reference<T&> { typedef T type; };
+#if ETL_CPP11_SUPPORTED
+  template <typename T> struct remove_reference<T&&> { typedef T type; };
+#endif
 
 #if ETL_CPP11_SUPPORTED
   template <typename T>
@@ -242,6 +245,18 @@ namespace etl
 #endif
 
   //***************************************************************************
+  /// remove_cvref
+  template <typename T> struct remove_cvref
+  {
+    typedef typename remove_cv<typename remove_reference<T>::type>::type type;
+  };
+
+#if ETL_CPP11_SUPPORTED
+  template <typename T>
+  using remove_cvref_t = typename remove_cvref<T>::type;
+#endif
+
+  //***************************************************************************
   /// is_integral
   template <typename T> struct is_integral : false_type {};
   template <> struct is_integral<bool> : true_type {};
@@ -269,8 +284,8 @@ namespace etl
   //***************************************************************************
   /// is_signed
   template <typename T> struct is_signed : false_type {};
-  template <> struct is_signed<char> : integral_constant<bool, (char(255) < 0)> {};
-  template <> struct is_signed<wchar_t> : public etl::integral_constant<bool, static_cast<bool>(wchar_t(-1) < wchar_t(0))> {};
+  template <> struct is_signed<char> : etl::bool_constant<(char(255) < 0)> {};
+  template <> struct is_signed<wchar_t> : public etl::bool_constant<static_cast<bool>(wchar_t(-1) < wchar_t(0))> {};
   template <> struct is_signed<signed char> : true_type {};
   template <> struct is_signed<short> : true_type {};
   template <> struct is_signed<int> : true_type {};
@@ -292,9 +307,9 @@ namespace etl
   /// is_unsigned
   template <typename T> struct is_unsigned : false_type {};
   template <> struct is_unsigned<bool> : true_type {};
-  template <> struct is_unsigned<char> : integral_constant<bool, (char(255) > 0)> {};
+  template <> struct is_unsigned<char> : etl::bool_constant<(char(255) > 0)> {};
   template <> struct is_unsigned<unsigned char> : true_type {};
-  template <> struct is_unsigned<wchar_t> : public etl::integral_constant<bool, (wchar_t(-1) > wchar_t(0))> {};
+  template <> struct is_unsigned<wchar_t> : public etl::bool_constant<(wchar_t(-1) > wchar_t(0))> {};
   template <> struct is_unsigned<unsigned short> : true_type {};
   template <> struct is_unsigned<unsigned int> : true_type {};
   template <> struct is_unsigned<unsigned long> : true_type {};
@@ -345,7 +360,7 @@ namespace etl
 
   //***************************************************************************
   /// is_arithmetic
-  template<typename T> struct is_arithmetic : integral_constant<bool, is_integral<T>::value || is_floating_point<T>::value> {};
+  template<typename T> struct is_arithmetic : etl::bool_constant<is_integral<T>::value || is_floating_point<T>::value> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -354,7 +369,7 @@ namespace etl
 
   //***************************************************************************
   /// is_fundamental
-  template <typename T> struct is_fundamental : integral_constant<bool, is_arithmetic<T>::value || is_void<T>::value> {};
+  template <typename T> struct is_fundamental : etl::bool_constant<is_arithmetic<T>::value || is_void<T>::value> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -363,7 +378,7 @@ namespace etl
 
   //***************************************************************************
   /// is_compound
-  template <typename T> struct is_compound : integral_constant<bool, !is_fundamental<T>::value> {};
+  template <typename T> struct is_compound : etl::bool_constant<!is_fundamental<T>::value> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -430,7 +445,7 @@ namespace etl
   //***************************************************************************
   /// is_pod
   /// Only fundamental and pointers types are recognised.
-  template <typename T> struct is_pod : etl::integral_constant<bool, etl::is_fundamental<T>::value || etl::is_pointer<T>::value> {};
+  template <typename T> struct is_pod : etl::bool_constant<etl::is_fundamental<T>::value || etl::is_pointer<T>::value> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -438,59 +453,14 @@ namespace etl
 #endif
 
   //***************************************************************************
-  /// is_trivially_constructible
-  /// Only POD types are recognised.
-  template <typename T> struct is_trivially_constructible : etl::is_pod<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_constructible_v = etl::is_trivially_constructible<T>::value;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copy_constructible
-  /// Only POD types are recognised.
-  template <typename T> struct is_trivially_copy_constructible : etl::is_pod<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copy_constructible_v = etl::is_trivially_copy_constructible<T>::value;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_destructible
-  /// Only POD types are recognised.
-  template <typename T> struct is_trivially_destructible : etl::is_pod<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_destructible_v = etl::is_trivially_destructible<T>::value;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copy_assignable
-  /// Only POD types are recognised.
-  template <typename T> struct is_trivially_copy_assignable : etl::is_pod<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copy_assignable_v = etl::is_trivially_copy_assignable<T>::value;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copyable
-  /// Only POD types are recognised.
-  template <typename T> struct is_trivially_copyable : etl::is_pod<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copyable_v = etl::is_trivially_copyable<T>::value;
-#endif
-
-  //***************************************************************************
   /// conditional
   template <bool B, typename T, typename F>  struct conditional { typedef T type; };
   template <typename T, typename F> struct conditional<false, T, F> { typedef F type; };
+
+#if ETL_CPP11_SUPPORTED
+  template <bool B, typename T, typename F>
+  using conditional_t = typename conditional<B, T, F>::type;
+#endif
 
   //***************************************************************************
   /// make_signed
@@ -501,10 +471,10 @@ namespace etl
   template <> struct make_signed<wchar_t>
   {
     typedef etl::conditional<sizeof(wchar_t) == sizeof(int16_t),
-      int16_t,
-      etl::conditional<sizeof(wchar_t) == sizeof(int32_t),
-      int32_t,
-      void>::type>::type type;
+                             int16_t,
+                             etl::conditional<sizeof(wchar_t) == sizeof(int32_t),
+                                              int32_t,
+                                              void>::type>::type type;
   };
 
   template <> struct make_signed<unsigned short> { typedef  short type; };
@@ -530,10 +500,10 @@ namespace etl
   template <> struct make_unsigned<wchar_t>
   {
     typedef etl::conditional<sizeof(wchar_t) == sizeof(uint16_t),
-      uint16_t,
-      etl::conditional<sizeof(wchar_t) == sizeof(uint32_t),
-      uint32_t,
-      void>::type>::type type;
+                             uint16_t,
+                             etl::conditional<sizeof(wchar_t) == sizeof(uint32_t),
+                                              uint32_t,
+                                              void>::type>::type type;
   };
 
   template <> struct make_unsigned<int> { typedef unsigned int type; };
@@ -620,8 +590,8 @@ namespace etl
   {
     typedef typename etl::remove_reference<T>::type U;
     typedef typename etl::conditional<etl::is_array<U>::value,
-      typename etl::remove_extent<U>::type*,
-      typename etl::remove_cv<U>::type>::type type;
+                                      typename etl::remove_extent<U>::type*,
+                                      typename etl::remove_cv<U>::type>::type type;
   };
 
 #if ETL_CPP11_SUPPORTED
@@ -633,7 +603,7 @@ namespace etl
   /// is_base_of
   template<typename TBase,
            typename TDerived,
-           const bool IsFundamental = (etl::is_fundamental<TBase>::value || etl::is_fundamental<TDerived>::value)>
+           const bool IsFundamental = (etl::is_fundamental<TBase>::value || etl::is_fundamental<TDerived>::value || etl::is_array<TDerived>::value)>
   struct is_base_of
   {
   private:
@@ -641,8 +611,10 @@ namespace etl
     template<typename T> struct dummy {};
     struct internal: TDerived, dummy<int>{};
 
-    static TBase* check(TBase*);
-    template<typename T> static char check(dummy<T>*);
+    static TBase* check(TBase*) { return (TBase*)0; }
+    
+    template<typename T> 
+    static char check(dummy<T>*) { return 0; }
 
   public:
 
@@ -672,7 +644,7 @@ namespace etl
   }
 
   template <typename T>
-  struct is_class : etl::integral_constant<bool, sizeof(private_type_traits::test<T>(0)) == 1U> {};
+  struct is_class : etl::bool_constant<sizeof(private_type_traits::test<T>(0)) == 1U> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -739,12 +711,12 @@ namespace etl
 
 #if defined(ETL_COMPILER_ARM5)
   template <typename TFrom, typename TTo>
-  struct is_convertible : etl::integral_constant<bool, __is_convertible_to(TFrom, TTo)> {};
+  struct is_convertible : etl::bool_constant<__is_convertible_to(TFrom, TTo)> {};
 #else
   template <typename TFrom, typename TTo>
-  struct is_convertible : etl::integral_constant<bool, (decltype(private_type_traits::returnable<TTo>(0))::value &&
-                                                        decltype(private_type_traits::nonvoid_convertible<TFrom, TTo>(0))::value) ||
-                                                        (etl::is_void<TFrom>::value && etl::is_void<TTo>::value)> {};
+  struct is_convertible : etl::bool_constant<(decltype(private_type_traits::returnable<TTo>(0))::value &&
+                                              decltype(private_type_traits::nonvoid_convertible<TFrom, TTo>(0))::value) ||
+                                              (etl::is_void<TFrom>::value && etl::is_void<TTo>::value)> {};
 #endif
 #endif
 
@@ -769,6 +741,7 @@ namespace etl
   /// Specialisation of 'alignment_of' for 'void'.
   ///\ingroup type_traits
   template <> struct alignment_of<void> : integral_constant <size_t, 0> {};
+  template <> struct alignment_of<const void> : integral_constant <size_t, 0> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -921,6 +894,19 @@ namespace etl
 #if ETL_CPP11_SUPPORTED
   template <typename T>
   using add_cv_t = typename std::add_cv<T>::type;
+#endif
+
+  //***************************************************************************
+  /// remove_cvref
+  ///\ingroup type_traits
+  template <typename T> struct remove_cvref
+  {
+    typedef typename std::remove_cv<typename std::remove_reference<T>::type>::type type;
+  };
+
+#if ETL_CPP11_SUPPORTED
+  template <typename T>
+  using remove_cvref_t = typename etl::remove_cvref<T>::type;
 #endif
 
   //***************************************************************************
@@ -1082,133 +1068,16 @@ namespace etl
   #endif
 #endif
 
-#if !defined(ARDUINO) && ETL_NOT_USING_STLPORT && defined(ETL_GCC_V5_TYPE_TRAITS_SUPPORTED)
-  //***************************************************************************
-  /// is_trivially_constructible
-  ///\ingroup type_traits
-  template <typename T> struct is_trivially_constructible : std::is_trivially_constructible<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_constructible_v = std::is_trivially_constructible_v<T>;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copy_constructible
-  ///\ingroup type_traits
-  template <typename T> struct is_trivially_copy_constructible : std::is_trivially_copy_constructible<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copy_constructible_v = std::is_trivially_copy_constructible_v<T>;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_destructible
-  ///\ingroup type_traits
-  template <typename T> struct is_trivially_destructible : std::is_trivially_destructible<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_destructible_v = std::is_trivially_destructible_v<T>;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copy_assignable
-  ///\ingroup type_traits
-  template <typename T> struct is_trivially_copy_assignable : std::is_trivially_copy_assignable<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copy_assignable_v = std::is_trivially_copy_assignable_v<T>;
-#endif
-
-  //***************************************************************************
-  /// is_trivially_copyable
-  ///\ingroup type_traits
-  template <typename T> struct is_trivially_copyable : std::is_trivially_copyable<T> {};
-
-#if ETL_CPP17_SUPPORTED
-  template <typename T>
-  inline constexpr bool is_trivially_copyable_v = std::is_trivially_copyable_v<T>;
-#endif
-#else
-    //***************************************************************************
-    /// is_trivially_constructible
-    ///\ingroup type_traits
-#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-    template <typename T> struct is_trivially_constructible : std::is_trivially_constructible<T> {};
-#else
-    template <typename T> struct is_trivially_constructible : std::is_pod<T> {};
-#endif
-
-  #if ETL_CPP17_SUPPORTED
-    template <typename T>
-    inline constexpr bool is_trivially_constructible_v = etl::is_trivially_constructible<T>::value;
-  #endif
-
-    //***************************************************************************
-    /// is_trivially_copy_constructible
-    ///\ingroup type_traits
-#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-    template <typename T> struct is_trivially_copy_constructible : std::is_trivially_copy_constructible<T> {};
-#else
-    template <typename T> struct is_trivially_copy_constructible : std::is_pod<T> {};
-#endif
-
-  #if ETL_CPP17_SUPPORTED
-    template <typename T>
-    inline constexpr bool is_trivially_copy_constructible_v = etl::is_trivially_copy_constructible<T>::value;
-  #endif
-
-    //***************************************************************************
-    /// is_trivially_destructible
-    ///\ingroup type_traits
-#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-    template <typename T> struct is_trivially_destructible : std::is_trivially_destructible<T> {};
-#else
-    template <typename T> struct is_trivially_destructible : std::is_pod<T> {};
-#endif
-
-  #if ETL_CPP17_SUPPORTED
-    template <typename T>
-    inline constexpr bool is_trivially_destructible_v = etl::is_trivially_destructible<T>::value;
-  #endif
-
-    //***************************************************************************
-    /// is_trivially_copy_assignable
-    ///\ingroup type_traits
-#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-    template <typename T> struct is_trivially_copy_assignable : std::is_trivially_copy_assignable<T> {};
-#else
-    template <typename T> struct is_trivially_copy_assignable : std::is_pod<T> {};
-#endif
-
-  #if ETL_CPP17_SUPPORTED
-    template <typename T>
-    inline constexpr bool is_trivially_copy_assignable_v = etl::is_trivially_copy_assignable<T>::value;
-  #endif
-
-    //***************************************************************************
-    /// is_trivially_copyable
-    ///\ingroup type_traits
-#if ETL_CPP11_SUPPORTED && ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-    template <typename T> struct is_trivially_copyable : std::is_trivially_copyable<T> {};
-#else
-    template <typename T> struct is_trivially_copyable : std::is_pod<T> {};
-#endif
-
-  #if ETL_CPP17_SUPPORTED
-    template <typename T>
-    inline constexpr bool is_trivially_copyable_v = etl::is_trivially_copyable<T>::value;
-  #endif
-#endif
-
   //***************************************************************************
   /// conditional
   ///\ingroup type_traits
   template <bool B, typename T, typename F>  struct conditional { typedef T type; };
   template <typename T, typename F> struct conditional<false, T, F> { typedef F type; };
+
+#if ETL_CPP11_SUPPORTED
+  template <bool B, typename T, typename F>
+  using conditional_t = typename conditional<B, T, F>::type;
+#endif
 
   //***************************************************************************
   /// make_signed
@@ -1355,6 +1224,7 @@ namespace etl
   ///\ingroup type_traits
   template <typename T> struct alignment_of : std::alignment_of<T> {};
   template <> struct alignment_of<void> : std::integral_constant<size_t, 0> {};
+  template <> struct alignment_of<const void> : std::integral_constant <size_t, 0> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
@@ -1610,6 +1480,628 @@ namespace etl
 #if ETL_CPP17_SUPPORTED
   template <typename T, typename T1, typename... TRest>
   inline constexpr bool are_all_same_v = are_all_same<T, T1, TRest...>::value;
+#endif
+
+  //***************************************************************************
+  /// conjunction
+#if ETL_CPP11_SUPPORTED
+  template <typename...>
+  struct conjunction : public etl::true_type
+  {
+  };
+
+  template <typename T1, typename... Tn>
+  struct conjunction<T1, Tn...> : public etl::conditional_t<bool(T1::value), etl::conjunction<Tn...>, T1>
+  {
+  };
+
+  template <typename T>
+  struct conjunction<T> : public T
+  {
+  };
+#endif
+
+#if ETL_CPP17_SUPPORTED
+  template <typename... T>
+  inline constexpr bool conjunction_v = conjunction<T...>::value;
+#endif
+
+  //***************************************************************************
+  /// disjunction
+#if ETL_CPP11_SUPPORTED
+  template <typename...>
+  struct disjunction : public etl::false_type
+  {
+  };
+
+  template <typename T1, typename... Tn>
+  struct disjunction<T1, Tn...> : public etl::conditional_t<bool(T1::value), T1, disjunction<Tn...>>
+  {
+  };
+
+  template <typename T1> struct disjunction<T1> : public T1
+  {
+  };
+#endif
+
+#if ETL_CPP17_SUPPORTED
+  template <typename... T>
+  inline constexpr bool disjunction_v = etl::disjunction<T...>::value;
+#endif
+
+  //***************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_STL && !defined(ETL_USE_TYPE_TRAITS_BUILTINS) && !defined(ETL_USER_DEFINED_TYPE_TRAITS) && ((!defined(ARDUINO) && ETL_NOT_USING_STLPORT) || defined(ETL_GCC_V5_TYPE_TRAITS_SUPPORTED))
+
+  //*********************************************
+  // Use the STL's definitions.
+  //*********************************************
+
+  //*********************************************
+  // is_assignable
+  template<typename T1, typename T2>
+  struct is_assignable : public std::is_assignable<T1, T2>
+  {
+  };
+
+  //*********************************************
+  // is_constructible
+  template<typename T, typename... TArgs>
+  struct is_constructible : public std::is_constructible<T, TArgs...>
+  {
+  };
+
+  //*********************************************
+  // is_copy_constructible
+  template <typename T>
+  struct is_copy_constructible : public std::is_copy_constructible<T>
+  {
+  };
+
+  //*********************************************
+  // is_move_constructible
+  template <typename T>
+  struct is_move_constructible : public std::is_move_constructible<T>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_constructible
+#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+  template <typename T>
+  struct is_trivially_constructible : public std::is_trivially_constructible<T>
+  {
+  };
+#else
+  template <typename T>
+  struct is_trivially_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_trivially_copy_constructible
+#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+  template <typename T>
+  struct is_trivially_copy_constructible : public std::is_trivially_copy_constructible<T>
+  {
+  };
+#else
+  template <typename T>
+  struct is_trivially_copy_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_trivially_destructible
+#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+  template <typename T>
+  struct is_trivially_destructible : public std::is_trivially_destructible<T>
+  {
+  };
+#else
+  template <typename T>
+  struct is_trivially_destructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_trivially_copy_assignable
+#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+  template <typename T>
+  struct is_trivially_copy_assignable : public std::is_trivially_copy_assignable<T>
+  {
+  };
+#else
+  template <typename T>
+  struct is_trivially_copy_assignable : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_trivially_copyable
+#if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
+  template <typename T>
+  struct is_trivially_copyable : public std::is_trivially_copyable<T>
+  {
+  };
+#else
+  template <typename T>
+  struct is_trivially_copyable : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+#elif defined(ETL_USE_TYPE_TRAITS_BUILTINS) && !defined(ETL_USER_DEFINED_TYPE_TRAITS)
+
+  //*********************************************
+  // Use the compiler's builtins.
+  //*********************************************
+
+  //*********************************************
+  // is_assignable
+  template<typename T1, typename T2>
+  struct is_assignable
+  {
+    static ETL_CONSTANT bool value = __is_assignable(T1, T2);
+  };
+
+#if ETL_CPP11_SUPPORTED
+  //*********************************************
+  // is_constructible
+  template<typename T, typename... TArgs>
+  struct is_constructible
+  {
+    static ETL_CONSTANT bool value = __is_constructible(T, TArgs...);
+  };
+#else
+  //*********************************************
+  // is_constructible
+  template<typename T, typename TArgs = void>
+  struct is_constructible
+  {
+    static ETL_CONSTANT bool value = __is_constructible(T, TArgs);
+  };
+
+  //*********************************************
+  // is_constructible
+  template<typename T>
+  struct is_constructible<T, void>
+  {
+    static ETL_CONSTANT bool value = __is_constructible(T);
+  };
+#endif
+
+  //*********************************************
+  // is_copy_constructible
+  template <typename T>
+  struct is_copy_constructible : public etl::is_constructible<T, typename etl::add_lvalue_reference<const T>::type>
+  {
+  };
+
+  //*********************************************
+  // is_move_constructible
+  template <typename T>
+  struct is_move_constructible : public etl::is_constructible<T, T>
+  {
+  };
+
+#if ETL_CPP11_SUPPORTED
+  //*********************************************
+  // is_trivially_constructible
+  template <typename T, typename... TArgs>
+  struct is_trivially_constructible
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_constructor(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_constructible(T, TArgs...);
+#endif
+  };
+#else
+  //*********************************************
+  // is_trivially_constructible
+  template <typename T, typename TArgs = void>
+  struct is_trivially_constructible
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_constructor(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_constructible(T, TArgs);
+#endif
+  };
+
+  //*********************************************
+  // is_trivially_constructible
+  template <typename T>
+  struct is_trivially_constructible<T, void>
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_constructor(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_constructible(T);
+#endif
+  };
+#endif
+
+  //*********************************************
+  // is_trivially_copy_constructible
+  template <typename T>
+  struct is_trivially_copy_constructible : public is_trivially_constructible<T, typename add_lvalue_reference<const T>::type>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_destructible
+  template <typename T>
+  struct is_trivially_destructible
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_destructor(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_destructible(T);
+#endif
+  };
+
+  //*********************************************
+  // is_trivially_copy_assignable
+  template <typename T>
+  struct is_trivially_copy_assignable
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_copy(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_copyable(T);
+#endif
+  };
+
+  //*********************************************
+  // is_trivially_copyable
+  template <typename T>
+  struct is_trivially_copyable
+  {
+#if defined(ETL_COMPILER_GCC)
+    static ETL_CONSTANT bool value = __has_trivial_copy(T);
+#else
+    static ETL_CONSTANT bool value = __is_trivially_copyable(T);
+#endif
+  };
+
+#elif defined(ETL_USER_DEFINED_TYPE_TRAITS) && !defined(ETL_USE_TYPE_TRAITS_BUILTINS)
+
+  //*********************************************
+  // Force the user to provide specialisations for
+  // anything other than arithmetics and pointers.
+  //*********************************************
+
+  //*********************************************
+  // is_assignable
+  template <typename T1,
+            typename T2,
+            bool B = (etl::is_arithmetic<T1>::value || etl::is_pointer<T1>::value) && (etl::is_arithmetic<T2>::value || etl::is_pointer<T2>::value)>
+  struct is_assignable;
+
+  template <typename T1, typename T2>
+  struct is_assignable<T1, T2, true> : public etl::true_type
+  {
+  };
+
+  template <typename T1, typename T2>
+  struct is_assignable<T1, T2, false>;
+
+#if ETL_CPP11_SUPPORTED
+  //*********************************************
+  // is_constructible
+  template <typename T, bool B, typename... TArgs>
+  struct is_constructible_helper;
+
+  template <typename T, typename... TArgs>
+  struct is_constructible_helper<T, true, TArgs...> : public etl::true_type
+  {
+  };
+
+  template <typename T, typename... TArgs>
+  struct is_constructible_helper<T, false, TArgs...>;
+
+  template <typename T, typename... TArgs>
+  struct is_constructible : public is_constructible_helper<T, etl::is_arithmetic<T>::value || etl::is_pointer<T>::value, TArgs...>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_copy_constructible
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_copy_constructible;
+
+  template <typename T>
+  struct is_copy_constructible<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_copy_constructible<T, false>;
+
+  //*********************************************
+  // is_move_constructible
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_move_constructible;
+
+  template <typename T>
+  struct is_move_constructible<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_move_constructible<T, false>;
+
+  //*********************************************
+  // is_trivially_constructible
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_trivially_constructible;
+
+  template <typename T>
+  struct is_trivially_constructible<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_trivially_constructible<T, false>;
+
+  //*********************************************
+  // is_trivially_copy_constructible
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_trivially_copy_constructible;
+
+  template <typename T>
+  struct is_trivially_copy_constructible<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_trivially_copy_constructible<T, false>;
+
+  //*********************************************
+  // is_trivially_destructible
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_trivially_destructible;
+
+  template <typename T>
+  struct is_trivially_destructible<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_trivially_destructible<T, false>;
+
+  //*********************************************
+  // is_trivially_copy_assignable
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_trivially_copy_assignable;
+
+  template <typename T>
+  struct is_trivially_copy_assignable<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_trivially_copy_assignable<T, false>;
+
+  //*********************************************
+  // is_trivially_copyable
+  template <typename T, bool B = etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  struct is_trivially_copyable;
+
+  template <typename T>
+  struct is_trivially_copyable<T, true> : public etl::true_type
+  {
+  };
+
+  template <typename T>
+  struct is_trivially_copyable<T, false>;
+
+#else
+
+  //*********************************************
+  // Assume that anything other than arithmetics 
+  // and pointers return false for the traits.
+  //*********************************************
+
+  //*********************************************
+  // is_assignable
+  template <typename T1, typename T2>
+  struct is_assignable : public etl::bool_constant<(etl::is_arithmetic<T1>::value || etl::is_pointer<T1>::value) && (etl::is_arithmetic<T2>::value || etl::is_pointer<T2>::value)>
+  {
+  };
+
+#if ETL_CPP11_SUPPORTED
+  //*********************************************
+  // is_constructible
+  template <typename T, typename... TArgs>
+  struct is_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+#endif
+
+  //*********************************************
+  // is_copy_constructible
+  template <typename T>
+  struct is_copy_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_move_constructible
+  template <typename T>
+  struct is_move_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_constructible
+  template <typename T>
+  struct is_trivially_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_copy_constructible
+  template <typename T>
+  struct is_trivially_copy_constructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_destructible
+  template <typename T>
+  struct is_trivially_destructible : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_copy_assignable
+  template <typename T>
+  struct is_trivially_copy_assignable : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+  //*********************************************
+  // is_trivially_copyable
+  template <typename T>
+  struct is_trivially_copyable : public etl::bool_constant<etl::is_arithmetic<T>::value || etl::is_pointer<T>::value>
+  {
+  };
+
+#endif
+
+  template <typename T1, typename T2>
+  struct is_lvalue_assignable : public etl::is_assignable<typename etl::add_lvalue_reference<T1>::type,
+                                                          typename etl::add_lvalue_reference<typename etl::add_const<T2>::type>::type>
+  {
+  };
+
+#if ETL_CPP17_SUPPORTED
+
+  template <typename T1, typename T2>
+  inline constexpr bool is_assignable_v = etl::is_assignable<T1, T2>::value;
+
+  template <typename T1, typename T2>
+  inline constexpr bool is_lvalue_assignable_v = etl::is_lvalue_assignable<T1, T2>::value;
+
+  template<typename T, typename... TArgs>
+  inline constexpr bool is_constructible_v = etl::is_constructible<T, TArgs...>::value;
+
+  template<typename T>
+  inline constexpr bool is_copy_constructible_v = etl::is_copy_constructible<T>::value;
+
+  template<typename T>
+  inline constexpr bool is_move_constructible_v = etl::is_move_constructible<T>::value;
+
+  template <typename T>
+  inline constexpr bool is_trivially_constructible_v = etl::is_trivially_constructible<T>::value;
+
+  template <typename T>
+  inline constexpr bool is_trivially_copy_constructible_v = etl::is_trivially_copy_constructible<T>::value;
+
+  template <typename T>
+  inline constexpr bool is_trivially_destructible_v = etl::is_trivially_destructible<T>::value;
+
+  template <typename T>
+  inline constexpr bool is_trivially_copy_assignable_v = etl::is_trivially_copy_assignable<T>::value;
+
+  template <typename T>
+  inline constexpr bool is_trivially_copyable_v = etl::is_trivially_copyable<T>::value;
+
+#endif
+
+  //*********************************************
+  // common_type
+  // Based on the sample implementation detailed on
+  // https://en.cppreference.com/w/cpp/types/common_type
+  //*********************************************
+#if ETL_CPP11_SUPPORTED
+  //***********************************
+  // Primary template
+  template<typename...>
+  struct common_type 
+  {
+  };
+
+  //***********************************
+  // One type
+  template <typename T>
+  struct common_type<T> : common_type<T, T> 
+  {
+  };
+
+  namespace private_common_type 
+  {
+    template <typename...>
+    using void_t = void;
+
+    template <typename T1, typename T2>
+    using conditional_result_t = decltype(false ? declval<T1>() : declval<T2>());
+
+    template <typename, typename, typename = void>
+    struct decay_conditional_result 
+    {
+    };
+
+    template <typename T1, typename T2>
+    struct decay_conditional_result<T1, T2, void_t<conditional_result_t<T1, T2>>>
+      : etl::decay<conditional_result_t<T1, T2>> 
+    {
+    };
+
+    template <typename T1, typename T2, typename = void>
+    struct common_type_2_impl : decay_conditional_result<const T1&, const T2&> 
+    {
+    };
+
+    template <typename T1, typename T2>
+    struct common_type_2_impl<T1, T2, void_t<conditional_result_t<T1, T2>>>
+      : decay_conditional_result<T1, T2> 
+    {
+    };
+  }
+
+  //***********************************
+  // Two types
+  template <typename T1, typename T2>
+  struct common_type<T1, T2>
+    : etl::conditional<etl::is_same<T1, typename etl::decay<T1>::type>::value && etl::is_same<T2, typename etl::decay<T2>::type>::value,
+                       private_common_type::common_type_2_impl<T1, T2>,
+                       common_type<typename etl::decay<T2>::type,
+                       typename etl::decay<T2>::type>>::type
+  {
+  };
+
+  //***********************************
+  // Three or more types
+  namespace private_common_type 
+  {
+    template <typename AlwaysVoid, typename T1, typename T2, typename... TRest>
+    struct common_type_multi_impl 
+    {
+    };
+
+    template <typename T1, typename T2, typename... TRest>
+    struct common_type_multi_impl<void_t<typename common_type<T1, T2>::type>, T1, T2, TRest...>
+      : common_type<typename common_type<T1, T2>::type, TRest...> 
+    {
+    };
+  }
+
+  template<typename T1, typename T2, typename... TRest>
+  struct common_type<T1, T2, TRest...>
+    : private_common_type::common_type_multi_impl<void, T1, T2, TRest...> 
+  {
+  };
+
+  template <typename... T>
+  using common_type_t = typename common_type<T...>::type;
 #endif
 }
 

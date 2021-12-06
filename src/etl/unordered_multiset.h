@@ -38,12 +38,12 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
-#include "container.h"
 #include "pool.h"
 #include "vector.h"
 #include "intrusive_forward_list.h"
 #include "hash.h"
 #include "type_traits.h"
+#include "nth_type.h"
 #include "parameter_type.h"
 #include "nullptr.h"
 #include "error_handler.h"
@@ -142,7 +142,7 @@ namespace etl
     typedef const value_type* const_pointer;
     typedef size_t            size_type;
 
-    typedef typename etl::parameter_type<TKey>::type key_parameter_t;
+    typedef const TKey& key_parameter_t;
 
     typedef etl::forward_link<0> link_t;
 
@@ -805,7 +805,7 @@ namespace etl
     //*********************************************************************
     size_t erase(key_parameter_t key)
     {
-      size_t n = 0;
+      size_t n = 0UL;
       size_t bucket_id = get_bucket_index(key);
 
       bucket_t& bucket = pbuckets[bucket_id];
@@ -945,7 +945,7 @@ namespace etl
     //*********************************************************************
     size_t count(key_parameter_t key) const
     {
-      size_t n = 0;
+      size_t n = 0UL;
       const_iterator f = find(key);
       const_iterator l = f;
 
@@ -1211,7 +1211,7 @@ namespace etl
       if (!empty())
       {
         // For each bucket...
-        for (size_t i = 0; i < number_of_buckets; ++i)
+        for (size_t i = 0UL; i < number_of_buckets; ++i)
         {
           bucket_t& bucket = pbuckets[i];
 
@@ -1291,7 +1291,7 @@ namespace etl
     //*********************************************************************
     /// Adjust the first and last markers according to the erased entry.
     //*********************************************************************
-    void adjust_first_last_markers_after_erase(bucket_t* pbucket)
+    void adjust_first_last_markers_after_erase(bucket_t* pcurrent)
     {
       if (empty())
       {
@@ -1300,7 +1300,7 @@ namespace etl
       }
       else
       {
-        if (pbucket == first)
+        if (pcurrent == first)
         {
           // We erased the first so, we need to search again from where we erased.
           while (first->empty())
@@ -1308,22 +1308,22 @@ namespace etl
             ++first;
           }
         }
-        else if (pbucket == last)
+        else if (pcurrent == last)
         {
           // We erased the last, so we need to search again. Start from the first, go no further than the current last.
-          bucket_t* pbucket = first;
+          bucket_t* pcurrent = first;
           bucket_t* pend = last;
 
           last = first;
 
-          while (pbucket != pend)
+          while (pcurrent != pend)
           {
-            if (!pbucket->empty())
+            if (!pcurrent->empty())
             {
-              last = pbucket;
+              last = pcurrent;
             }
 
-            ++pbucket;
+            ++pcurrent;
           }
         }
         else
@@ -1467,7 +1467,7 @@ namespace etl
       base::assign(first_, last_);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -1529,11 +1529,21 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  template <typename T, typename... Ts>
-  unordered_multiset(T, Ts...)
-    ->unordered_multiset<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
-#endif 
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename... T>
+  unordered_multiset(T...) -> unordered_multiset<etl::nth_type_t<0, T...>, sizeof...(T)>;
+#endif
+
+  //*************************************************************************
+  /// Make
+  //*************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename TKey, typename THash = etl::hash<TKey>, typename TKeyEqual = etl::equal_to<TKey>, typename... T>
+  constexpr auto make_unordered_multiset(T&&... keys) -> etl::unordered_multiset<TKey, sizeof...(T), sizeof...(T), THash, TKeyEqual>
+  {
+    return { {etl::forward<T>(keys)...} };
+  }
+#endif
 }
 
 #endif

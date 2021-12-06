@@ -41,6 +41,10 @@ SOFTWARE.
 #include "iterator.h"
 #include "static_assert.h"
 
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  #include <initializer_list>
+#endif
+
 namespace etl
 {
   //***************************************************************************
@@ -329,7 +333,7 @@ namespace etl
         const difference_type lhs_index = lhs.get_index();
         const difference_type rhs_index = rhs.get_index();
         const difference_type reference_index = lhs.container().begin().get_index();
-        const size_t buffer_size = lhs.container().max_size() + 1;
+        const size_t buffer_size = lhs.container().max_size() + 1UL;
 
         const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
         const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
@@ -602,7 +606,7 @@ namespace etl
         const difference_type lhs_index = lhs.get_index();
         const difference_type rhs_index = rhs.get_index();
         const difference_type reference_index = lhs.container().begin().get_index();
-        const size_t buffer_size = lhs.container().max_size() + 1;
+        const size_t buffer_size = lhs.container().max_size() + 1UL;
 
         const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
         const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
@@ -1058,7 +1062,7 @@ namespace etl
       }
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -1123,7 +1127,7 @@ namespace etl
         this->clear();
 
         for (typename etl::icircular_buffer<T>::const_iterator itr = other.begin(); itr != other.end(); ++itr)
-        {          
+        {
           this->push(etl::move(*itr));
         }
       }
@@ -1244,7 +1248,7 @@ namespace etl
         this->clear();
 
         for (typename etl::icircular_buffer<T>::iterator itr = other.begin(); itr != other.end(); ++itr)
-        {          
+        {
           this->push(etl::move(*itr));
         }
       }
@@ -1277,7 +1281,7 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
   template <typename T, typename... Ts>
   circular_buffer(T, Ts...)
     ->circular_buffer<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;

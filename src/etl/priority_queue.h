@@ -38,7 +38,7 @@ SOFTWARE.
 #include "algorithm.h"
 #include "utility.h"
 #include "functional.h"
-#include "container.h"
+#include "iterator.h"
 #include "vector.h"
 #include "type_traits.h"
 #include "parameter_type.h"
@@ -308,7 +308,7 @@ namespace etl
     //*************************************************************************
     void pop_into(reference destination)
     {
-      destination = top();
+      destination = ETL_MOVE(top());
       pop();
     }
 
@@ -362,6 +362,34 @@ namespace etl
     {
       container.clear();
     }
+
+    //*************************************************************************
+    /// Assignment operator.
+    //*************************************************************************
+    ipriority_queue& operator = (const ipriority_queue& rhs)
+    {
+      if (&rhs != this)
+      {
+        clone(rhs);
+      }
+
+      return *this;
+    }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    /// Move assignment operator.
+    //*************************************************************************
+    ipriority_queue& operator = (ipriority_queue&& rhs)
+    {
+      if (&rhs != this)
+      {
+        move(etl::move(rhs));
+      }
+
+      return *this;
+    }
+#endif
 
   protected:
 

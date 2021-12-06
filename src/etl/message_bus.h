@@ -225,6 +225,16 @@ namespace etl
           break;
         }
       }
+
+      if (has_successor())
+      {
+        etl::imessage_router& successor = get_successor();
+
+        if (successor.accepts(shared_msg.get_message().get_message_id()))
+        {
+          successor.receive(destination_router_id, shared_msg);
+        }
+      }
     }
 
     //*******************************************
@@ -294,6 +304,16 @@ namespace etl
           }
 
           break;
+        }
+      }
+
+      if (has_successor())
+      {
+        etl::imessage_router& successor = get_successor();
+
+        if (successor.accepts(message.get_message_id()))
+        {
+          successor.receive(destination_router_id, message);
         }
       }
     }
@@ -405,27 +425,6 @@ namespace etl
   /// Send a message to a bus.
   //***************************************************************************
   inline static void send_message(etl::imessage_bus&       bus,
-                                  etl::message_router_id_t id,
-                                  const etl::imessage&     message)
-  {
-    bus.receive(id, message);
-  }
-
-  //***************************************************************************
-  /// Send a message to a bus.
-  //***************************************************************************
-  inline static void send_message(etl::imessage_router& source,
-                                  etl::imessage_bus&    bus,
-                                  const etl::imessage&  message)
-  {
-    bus.receive(message);
-  }
-
-  //***************************************************************************
-  /// Send a message to a bus.
-  //***************************************************************************
-  inline static void send_message(etl::imessage_router&    source,
-                                  etl::imessage_bus&       bus,
                                   etl::message_router_id_t id,
                                   const etl::imessage&     message)
   {

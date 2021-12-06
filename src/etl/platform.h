@@ -57,7 +57,7 @@ SOFTWARE.
   #include "etl_profile.h"
 #endif
 
-// Helper macro, so we don't have to use double negatives.
+// Helper macros, so we don't have to use double negatives.
 // The ETL will use the STL, unless ETL_NO_STL is defined.
 // With this macro we can use '#if ETL_USING_STL' instead of '#if !ETL_NO_STL' in the code.
 #if defined(ETL_NO_STL)
@@ -146,6 +146,7 @@ SOFTWARE.
   #define ETL_OVERRIDE override
   #define ETL_FINAL final
   #define ETL_NORETURN [[noreturn]]
+  #define ETL_MOVE(x) etl::move(x)
 
   #if defined(ETL_THROW_EXCEPTIONS)
     #define ETL_NOEXCEPT  noexcept
@@ -164,6 +165,7 @@ SOFTWARE.
   #define ETL_NORETURN
   #define ETL_NOEXCEPT
   #define ETL_NOEXCEPT_EXPR(expression)
+  #define ETL_MOVE(x) x
 #endif
 
 // C++14
@@ -207,6 +209,19 @@ SOFTWARE.
   #define ETL_CONSTEXPR20
   #define ETL_CONSTEVAL
   #define ETL_CONSTINIT
+#endif
+
+#if !defined(ETL_USING_INITIALIZER_LIST)
+  #if ETL_CPP11_SUPPORTED && ETL_USING_STL && ETL_NOT_USING_STLPORT
+    #define ETL_USING_INITIALIZER_LIST 1
+  #else
+    #define ETL_USING_INITIALIZER_LIST 0
+  #endif
+#endif
+
+// Determine if the ETL should support atomics.
+#if defined(ETL_NO_ATOMICS) || defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0) || defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0_PLUS)
+  #define ETL_HAS_ATOMIC 0
 #endif
 
 // Sort out namespaces for STL/No STL options.

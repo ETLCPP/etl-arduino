@@ -41,7 +41,6 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "char_traits.h"
-#include "container.h"
 #include "alignment.h"
 #include "array.h"
 #include "algorithm.h"
@@ -227,7 +226,7 @@ namespace etl
     /// Deprecated. Use is_truncated()
     ///\return Whether the string was truncated by the last operation.
     //*************************************************************************
-    ETL_DEPRECATED 
+    ETL_DEPRECATED
     bool truncated() const
     {
       return flags.test<IS_TRUNCATED>();
@@ -482,7 +481,7 @@ namespace etl
     }
 
     //*********************************************************************
-    /// Resizes the string, but doesn't initialise the free space 
+    /// Resizes the string, but doesn't initialise the free space
     /// except for a terminator null.
     ///\param new_size The new size.
     //*********************************************************************
@@ -919,7 +918,7 @@ namespace etl
     iterator insert(const_iterator position, T value)
     {
       // Quick hack, as iterators are pointers.
-      iterator insert_position = const_cast<iterator>(position);
+      iterator insert_position = to_iterator(position);
 
       if (current_size < CAPACITY)
       {
@@ -968,15 +967,17 @@ namespace etl
     ///\param n        The number of elements to add.
     ///\param value    The value to insert.
     //*********************************************************************
-    void insert(const_iterator position, size_type n, T value)
+    iterator insert(const_iterator position, size_type n, T value)
     {
+      iterator position_ = to_iterator(position);
+
       if (n == 0)
       {
-        return;
+        return position_;
       }
 
       // Quick hack, as iterators are pointers.
-      iterator insert_position = const_cast<iterator>(position);
+      iterator insert_position = to_iterator(position);
       const size_type start = etl::distance(cbegin(), position);
 
       // No effect.
@@ -989,7 +990,7 @@ namespace etl
         ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
 #endif
 #endif
-        return;
+        return to_iterator(position);;
       }
 
       // Fills the string to the end?
@@ -1041,6 +1042,8 @@ namespace etl
       }
 
       p_buffer[current_size] = 0;
+
+      return position_;
     }
 
     //*********************************************************************
@@ -1050,15 +1053,17 @@ namespace etl
     ///\param first    The first element to add.
     ///\param last     The last + 1 element to add.
     //*********************************************************************
-    template <class TIterator>
-    void insert(iterator position, TIterator first, TIterator last)
+    template <typename TIterator>
+    iterator insert(const_iterator position, TIterator first, TIterator last)
     {
+      iterator position_ = to_iterator(position);
+
       if (first == last)
       {
-        return;
+        return position_;
       }
 
-      const size_type start = etl::distance(begin(), position);
+      const size_type start = etl::distance(begin(), position_);
       const size_type n = etl::distance(first, last);
 
       // No effect.
@@ -1071,7 +1076,7 @@ namespace etl
         ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
 #endif
 #endif
-        return;
+        return position_;
       }
 
       // Fills the string to the end?
@@ -1090,9 +1095,9 @@ namespace etl
 
         current_size = CAPACITY;
 
-        while (position != end())
+        while (position_ != end())
         {
-          *position++ = *first++;
+          *position_++ = *first++;
         }
       }
       else
@@ -1122,15 +1127,17 @@ namespace etl
           current_size += shift_amount;
         }
 
-        etl::copy_backward(position, position + characters_to_shift, begin() + to_position + characters_to_shift);
+        etl::copy_backward(position_, position_ + characters_to_shift, begin() + to_position + characters_to_shift);
 
         while (first != last)
         {
-          *position++ = *first++;
+          *position_++ = *first++;
         }
       }
 
       p_buffer[current_size] = 0;
+
+      return position_;
     }
 
     //*********************************************************************
@@ -1262,6 +1269,21 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Erases an element.
+    ///\param i_element Iterator to the element.
+    ///\return An iterator pointing to the element that followed the erased element.
+    //*********************************************************************
+    iterator erase(const_iterator i_element)
+    {
+      iterator i_element_(to_iterator(i_element));
+
+      etl::copy(i_element_ + 1, end(), i_element_);
+      p_buffer[--current_size] = 0;
+
+      return i_element_;
+    }
+
+    //*********************************************************************
     /// Erases a range of elements.
     /// The range includes all the elements between first and last, including the
     /// element pointed by first, but not the one pointed by last.
@@ -1269,21 +1291,24 @@ namespace etl
     ///\param last  Iterator to the last element.
     ///\return An iterator pointing to the element that followed the erased element.
     //*********************************************************************
-    iterator erase(iterator first, iterator last)
+    iterator erase(const_iterator first, const_iterator last)
     {
-      if (first == last)
+      iterator first_ = to_iterator(first);
+      iterator last_  = to_iterator(last);
+
+      if (first_ == last_)
       {
-        return first;
+        return first_;
       }
 
-      etl::copy(last, end(), first);
-      size_type n_delete = etl::distance(first, last);
+      etl::copy(last_, end(), first_);
+      size_type n_delete = etl::distance(first_, last_);
 
       current_size -= n_delete;
       p_buffer[current_size] = 0;
       cleanup();
 
-      return first;
+      return first_;
     }
 
     //*********************************************************************
@@ -1577,8 +1602,8 @@ namespace etl
     ibasic_string& replace(const_iterator first, const_iterator last, const ibasic_string& str)
     {
       // Quick hack, as iterators are pointers.
-      iterator first_ = const_cast<iterator>(first);
-      iterator last_ = const_cast<iterator>(last);
+      iterator first_ = to_iterator(first);
+      iterator last_ = to_iterator(last);
 
       // Erase the bit we want to replace.
       erase(first_, last_);
@@ -1657,8 +1682,8 @@ namespace etl
     ibasic_string& replace(const_iterator first, const_iterator last, const_pointer s)
     {
       // Quick hack, as iterators are pointers.
-      iterator first_ = const_cast<iterator>(first);
-      iterator last_ = const_cast<iterator>(last);
+      iterator first_ = to_iterator(first);
+      iterator last_ = to_iterator(last);
 
       // Erase the bit we want to replace.
       erase(first_, last_);
@@ -1694,8 +1719,8 @@ namespace etl
     ibasic_string& replace(const_iterator first, const_iterator last, const_pointer s, size_type n)
     {
       // Quick hack, as iterators are pointers.
-      iterator first_ = const_cast<iterator>(first);
-      iterator last_ = const_cast<iterator>(last);
+      iterator first_ = to_iterator(first);
+      iterator last_ = to_iterator(last);
 
       // Erase the bit we want to replace.
       erase(first_, last_);
@@ -1731,8 +1756,8 @@ namespace etl
     ibasic_string& replace(const_iterator first, const_iterator last, size_type n, value_type c)
     {
       // Quick hack, as iterators are pointers.
-      iterator first_ = const_cast<iterator>(first);
-      iterator last_ = const_cast<iterator>(last);
+      iterator first_ = to_iterator(first);
+      iterator last_ = to_iterator(last);
 
       // Erase the bit we want to replace.
       erase(first_, last_);
@@ -1750,8 +1775,8 @@ namespace etl
     ibasic_string& replace(const_iterator first, const_iterator last, TIterator first_replace, TIterator last_replace)
     {
       // Quick hack, as iterators are pointers.
-      iterator first_ = const_cast<iterator>(first);
-      iterator last_ = const_cast<iterator>(last);
+      iterator first_ = to_iterator(first);
+      iterator last_ = to_iterator(last);
 
       // Erase the bit we want to replace.
       erase(first_, last_);
@@ -2338,7 +2363,7 @@ namespace etl
     //*************************************************************************
     /// Destructor.
     //*************************************************************************
-#if defined(ETL_POLYMORPHIC_STRINGS) || defined(ETL_POLYMORPHIC_CONTAINERS)
+#if defined(ETL_POLYMORPHIC_STRINGS) || defined(ETL_POLYMORPHIC_CONTAINERS) || defined(ETL_ISTRING_REPAIR_ENABLE)
   public:
     virtual
 #else
@@ -2352,6 +2377,16 @@ namespace etl
         initialise();
       }
 #endif
+    }
+
+  protected:
+
+    //*************************************************************************
+    /// Convert from const_iterator to iterator
+    //*************************************************************************
+    iterator to_iterator(const_iterator itr) const
+    {
+      return const_cast<iterator>(itr);
     }
   };
 
@@ -2393,7 +2428,6 @@ namespace etl
   {
     return (rhs.size() == etl::strlen(lhs)) && etl::equal(rhs.begin(), rhs.end(), lhs);
   }
-
 
   //***************************************************************************
   /// Not equal operator.
