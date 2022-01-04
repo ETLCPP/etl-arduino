@@ -26,8 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_CALLBACK_TIMER_ATOMIC_INCLUDED
-#define ETL_CALLBACK_TIMER_ATOMIC_INCLUDED
+#ifndef ETL_CALLBACK_TIMER_LOCKED_INCLUDED
+#define ETL_CALLBACK_TIMER_LOCKED_INCLUDED
 
 #include <stdint.h>
 
@@ -35,59 +35,57 @@ SOFTWARE.
 
 #include "algorithm.h"
 #include "nullptr.h"
-#include "function.h"
+#include "delegate.h"
 #include "static_assert.h"
 #include "timer.h"
-#include "atomic.h"
 #include "error_handler.h"
 #include "placement_new.h"
-#include "atomic.h"
-#include "delegate.h"
-
-#if ETL_HAS_ATOMIC
 
 namespace etl
 {
   //***************************************************************************
   /// Interface for callback timer
   //***************************************************************************
-  class icallback_timer_atomic
+  class icallback_timer_locked
   {
   public:
 
     typedef etl::delegate<void(void)> callback_type;
+    typedef etl::delegate<bool(void)> try_lock_type;
+    typedef etl::delegate<void(void)> lock_type;
+    typedef etl::delegate<void(void)> unlock_type;
 
     //*******************************************
     /// Register a timer.
     //*******************************************
-    etl::timer::id::type register_timer(callback_type callback_,
-                                        uint32_t   period_,
-                                        bool       repeating_)
+    etl::timer::id::type register_timer(const callback_type& callback_,
+                                        uint32_t             period_,
+                                        bool                 repeating_)
     {
-        etl::timer::id::type id = etl::timer::id::NO_TIMER;
-        
-        bool is_space = (number_of_registered_timers < MAX_TIMERS);
+      etl::timer::id::type id = etl::timer::id::NO_TIMER;
 
-        if (is_space)
+      bool is_space = (number_of_registered_timers < MAX_TIMERS);
+
+      if (is_space)
+      {
+        // Search for the free space.
+        for (uint_least8_t i = 0U; i < MAX_TIMERS; ++i)
         {
-          // Search for the free space.
-          for (uint_least8_t i = 0U; i < MAX_TIMERS; ++i)
-            {
-              timer_data& timer = timer_array[i];
-               
-              if (timer.id == etl::timer::id::NO_TIMER)
-              {
-                // Create in-place.
-                new (&timer) timer_data(i, callback_, period_, repeating_);
-                ++number_of_registered_timers;
-                id = i;
-                break;
-              }
+          timer_data& timer = timer_array[i];
+
+          if (timer.id == etl::timer::id::NO_TIMER)
+          {
+            // Create in-place.
+            new (&timer) timer_data(i, callback_, period_, repeating_);
+            ++number_of_registered_timers;
+            id = i;
+            break;
           }
         }
-
-        return id;
       }
+
+      return id;
+    }
 
     //*******************************************
     /// Unregister a timer.
@@ -104,9 +102,9 @@ namespace etl
         {
           if (timer.is_active())
           {
-            ++process_semaphore;
+            lock();
             active_list.remove(timer.id, false);
-            --process_semaphore;
+            unlock();
           }
 
           // Reset in-place.
@@ -141,9 +139,9 @@ namespace etl
     //*******************************************
     void clear()
     {
-      ++process_semaphore;
+      lock();
       active_list.clear();
-      --process_semaphore;
+      unlock();
 
       for (uint8_t i = 0U; i < MAX_TIMERS; ++i)
       {
@@ -163,7 +161,7 @@ namespace etl
     {
       if (enabled)
       {
-        if (process_semaphore.load() == 0U)
+        if (try_lock())
         {
           // We have something to do?
           bool has_active = !active_list.empty();
@@ -179,6 +177,7 @@ namespace etl
               count -= timer.delta;
 
               active_list.remove(timer.id, true);
+              ptimer = &active_list.front();
 
               if (timer.repeating)
               {
@@ -189,7 +188,6 @@ namespace etl
 
               if (timer.callback.is_valid())
               {
-                // Call the delegate callback.
                 timer.callback();
               }
 
@@ -202,6 +200,8 @@ namespace etl
               active_list.front().delta -= count;
             }
           }
+
+          unlock();
 
           return true;
         }
@@ -228,7 +228,7 @@ namespace etl
           // Has a valid period.
           if (timer.period != etl::timer::state::INACTIVE)
           {
-            ++process_semaphore;
+            lock();
             if (timer.is_active())
             {
               active_list.remove(timer.id, false);
@@ -236,7 +236,7 @@ namespace etl
 
             timer.delta = immediate_ ? 0U : timer.period;
             active_list.insert(timer.id);
-            --process_semaphore;
+            unlock();
 
             result = true;
           }
@@ -263,9 +263,9 @@ namespace etl
         {
           if (timer.is_active())
           {
-            ++process_semaphore;
+            lock();
             active_list.remove(timer.id, false);
-            --process_semaphore;
+            unlock();
           }
 
           result = true;
@@ -301,6 +301,16 @@ namespace etl
       }
 
       return false;
+    }
+
+    //*******************************************
+    /// Sets the lock and unlock delegates.
+    //*******************************************
+    void set_locks(try_lock_type try_lock_, lock_type lock_, lock_type unlock_)
+    {
+      try_lock = try_lock_;
+      lock     = lock_;
+      unlock   = unlock_;
     }
 
   protected:
@@ -372,13 +382,12 @@ namespace etl
     //*******************************************
     /// Constructor.
     //*******************************************
-    icallback_timer_atomic(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
-      : timer_array(timer_array_)
-      , active_list(timer_array_)
-      , enabled(false)
-      , process_semaphore(0U)
-      , number_of_registered_timers(0U)
-      , MAX_TIMERS(MAX_TIMERS_)
+    icallback_timer_locked(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
+      : timer_array(timer_array_),
+        active_list(timer_array_),
+        enabled(false),
+        number_of_registered_timers(0U),
+        MAX_TIMERS(MAX_TIMERS_)
     {
     }
 
@@ -569,8 +578,11 @@ namespace etl
     timer_list active_list;
 
     volatile bool enabled;
-    volatile etl::atomic_uint_least16_t process_semaphore;
     volatile uint_least8_t number_of_registered_timers;
+
+    try_lock_type try_lock; ///< The callback that tries to lock.
+    lock_type     lock;     ///< The callback that locks.
+    unlock_type   unlock;   ///< The callback that unlocks.
 
   public:
 
@@ -581,18 +593,32 @@ namespace etl
   /// The callback timer
   //***************************************************************************
   template <uint_least8_t MAX_TIMERS_>
-  class callback_timer_atomic : public etl::icallback_timer_atomic
+  class callback_timer_locked : public etl::icallback_timer_locked
   {
   public:
 
     ETL_STATIC_ASSERT(MAX_TIMERS_ <= 254U, "No more than 254 timers are allowed");
 
+    typedef icallback_timer_locked::callback_type callback_type;
+    typedef icallback_timer_locked::try_lock_type try_lock_type;
+    typedef icallback_timer_locked::lock_type     lock_type;
+    typedef icallback_timer_locked::unlock_type   unlock_type;
+
     //*******************************************
     /// Constructor.
     //*******************************************
-    callback_timer_atomic()
-      : icallback_timer_atomic(timer_array, MAX_TIMERS_)
+    callback_timer_locked()
+      : icallback_timer_locked(timer_array, MAX_TIMERS_)
     {
+    }
+
+    //*******************************************
+    /// Constructor.
+    //*******************************************
+    callback_timer_locked(try_lock_type try_lock_, lock_type lock_, unlock_type unlock_)
+      : icallback_timer_locked(timer_array, MAX_TIMERS_)
+    {
+      this->set_locks(try_lock_, lock_, unlock_);
     }
 
   private:
@@ -600,7 +626,5 @@ namespace etl
     timer_data timer_array[MAX_TIMERS_];
   };
 }
-
-#endif
 
 #endif
