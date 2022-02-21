@@ -58,7 +58,7 @@ namespace etl
   ///\ingroup memory
   //*****************************************************************************
   template <typename T>
-  ETL_CONSTEXPR T* addressof(T& t)
+  ETL_CONSTEXPR17 T* addressof(T& t)
   {
 #if ETL_CPP11_SUPPORTED && ETL_USING_STL
     return std::addressof(t);
@@ -935,6 +935,48 @@ namespace etl
     count += n;
 
     return std::uninitialized_value_construct_n(o_begin, n);
+  }
+#endif
+
+#if ETL_NOT_USING_STL || ETL_CPP20_NOT_SUPPORTED
+#if ETL_CPP11_SUPPORTED
+  //*****************************************************************************
+  /// Constructs an item at address p with value constructed from 'args'.
+  /// https://en.cppreference.com/w/cpp/memory/construct_at
+  ///\ingroup memory
+  //*****************************************************************************
+  template <typename T, typename... TArgs>
+  ETL_CONSTEXPR T* construct_at(T* p, TArgs&&... args)
+  {
+    return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T(etl::forward<TArgs>(args)...);
+  }
+#else
+  //*****************************************************************************
+  /// Constructs an item at address p.
+  /// https://en.cppreference.com/w/cpp/memory/construct_at
+  ///\ingroup memory
+  //*****************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR T* construct_at(T* p)
+  {
+    return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T();
+  }
+  //*****************************************************************************
+  /// Constructs an item at address p with value 'arg'.
+  /// https://en.cppreference.com/w/cpp/memory/construct_at
+  ///\ingroup memory
+  //*****************************************************************************
+  template <typename T, typename TArg>
+  ETL_CONSTEXPR T* construct_at(T* p, const TArg& arg)
+  {
+    return ::new (const_cast<void*>(static_cast<const volatile void*>(p))) T(arg);
+  }
+#endif
+#else
+  template <typename T, typename... TArgs>
+  ETL_CONSTEXPR20 T* construct_at(T* p, TArgs&&... args)
+  {
+    return std::construct_at(p, etl::forward<TArgs>(args)...);
   }
 #endif
 
@@ -2058,7 +2100,7 @@ namespace etl
 
     T* begin()
     {
-      return reinterpret_cast<const T*>(raw);
+      return reinterpret_cast<T*>(raw);
     }
 
     const T* begin() const
@@ -2068,7 +2110,7 @@ namespace etl
 
     T* end()
     {
-      return reinterpret_cast<const T*>(raw + (sizeof(T) * N_Objects));
+      return reinterpret_cast<T*>(raw + (sizeof(T) * N_Objects));
     }
 
     const T* end() const

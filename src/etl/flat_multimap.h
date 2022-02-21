@@ -38,12 +38,9 @@ SOFTWARE.
 #include "placement_new.h"
 #include "nth_type.h"
 #include "type_traits.h"
+#include "initializer_list.h"
 
 #include "private/comparator_is_transparent.h"
-
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  #include <initializer_list>
-#endif
 
 //*****************************************************************************
 ///\defgroup flat_multimap flat_multimap
@@ -249,7 +246,8 @@ namespace etl
 
       while (first != last)
       {
-        insert(*first++);
+        insert(*first);
+        ++first;
       }
     }
 
@@ -333,7 +331,8 @@ namespace etl
     {
       while (first != last)
       {
-        insert(*first++);
+        insert(*first);
+        ++first;
       }
     }
 
@@ -860,10 +859,14 @@ namespace etl
         etl::iflat_multimap<TKey, TMapped, TKeyCompare>::iterator first = rhs.begin();
         etl::iflat_multimap<TKey, TMapped, TKeyCompare>::iterator last = rhs.end();
 
-        // Add all of the elements.
+        // Move all of the elements.
         while (first != last)
         {
-          this->insert(etl::move(*first++));
+          typename etl::iflat_multimap<TKey, TMapped, TKeyCompare>::iterator temp = first;
+          ++temp;
+
+          this->insert(etl::move(*first));
+          first = temp;
         }
       }
     }

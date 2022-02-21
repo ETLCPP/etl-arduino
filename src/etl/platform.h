@@ -229,14 +229,6 @@ SOFTWARE.
   #define ETL_NO_UNIQUE_ADDRESS
 #endif
 
-#if !defined(ETL_USING_INITIALIZER_LIST)
-  #if ETL_CPP11_SUPPORTED && ETL_USING_STL && ETL_NOT_USING_STLPORT
-    #define ETL_USING_INITIALIZER_LIST 1
-  #else
-    #define ETL_USING_INITIALIZER_LIST 0
-  #endif
-#endif
-
 //*************************************
 // Determine if the ETL can use std::array
 #if !defined(ETL_HAS_STD_ARRAY)
@@ -264,6 +256,16 @@ SOFTWARE.
     #define ETL_HAS_ATOMIC 0
   #endif
 #endif
+
+//*************************************
+// Set force flag to 0 if not already set.
+#if !defined(ETL_FORCE_CONSTEXPR_ALGORITHMS)
+  #define ETL_FORCE_CONSTEXPR_ALGORITHMS 0
+#endif
+
+//*************************************
+// Check for availability of certain builtins
+#include "profiles/determine_builtin_support.h"
 
 //*************************************
 // Sort out namespaces for STL/No STL options.

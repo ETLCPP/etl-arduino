@@ -48,10 +48,7 @@ SOFTWARE.
 #include "iterator.h"
 #include "utility.h"
 #include "placement_new.h"
-
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  #include <initializer_list>
-#endif
+#include "initializer_list.h"
 
 #include "private/minmax_push.h"
 #include "private/comparator_is_transparent.h"
@@ -798,6 +795,13 @@ namespace etl
       }
 
     private:
+
+      // Convert to an iterator.
+      imap::iterator to_iterator() const
+      {
+        return imap::iterator(const_cast<imap&>(*p_map), const_cast<Node*>(p_node));
+      }
+
       // Pointer to map associated with this iterator
       const imap* p_map;
 
@@ -1102,13 +1106,12 @@ namespace etl
     //*************************************************************************
     iterator erase(const_iterator first, const_iterator last)
     {
-      iterator next;
       while (first != last)
       {
-        next = erase(first++);
+        first = erase(first);
       }
 
-      return next;
+      return last.to_iterator();
     }
 
     //*********************************************************************
@@ -1259,7 +1262,8 @@ namespace etl
     {
       while (first != last)
       {
-        insert(*first++);
+        insert(*first);
+        ++first;
       }
     }
 
@@ -1372,7 +1376,8 @@ namespace etl
 
         while (from != rhs.end())
         {
-          this->insert(etl::move(*from++));
+          this->insert(etl::move(*from));
+          ++from;
         }
       }
 
@@ -2624,7 +2629,11 @@ namespace etl
 
         while (from != other.end())
         {
-          this->insert(etl::move(*from++));
+          typename etl::imap<TKey, TValue, TCompare>::iterator temp = from;
+          ++temp;
+
+          this->insert(etl::move(*from));
+          from = temp;
         }
       }
     }
@@ -2691,7 +2700,11 @@ namespace etl
 
         while (from != rhs.end())
         {
-          this->insert(etl::move(*from++));
+          typename etl::imap<TKey, TValue, TCompare>::iterator temp = from;
+          ++temp;
+
+          this->insert(etl::move(*from));
+          from = temp;
         }
       }
 

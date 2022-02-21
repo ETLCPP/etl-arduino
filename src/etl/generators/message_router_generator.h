@@ -260,7 +260,7 @@ namespace etl
 
   //***********************************************
   /// null message router functionality.
-  etl::imessage_router& get_null_message_router()
+  inline etl::imessage_router& get_null_message_router()
   {
     return etl::null_message_router::instance();
   }
@@ -325,8 +325,8 @@ namespace etl
   //***************************************************************************
   /// Send a message to a router.
   //***************************************************************************
-  static void send_message(etl::imessage_router& destination,
-                           const etl::imessage&  message)
+  static inline void send_message(etl::imessage_router& destination,
+                                  const etl::imessage&  message)
   {
     destination.receive(message);
   }
@@ -586,7 +586,6 @@ namespace etl
       cog.outl("        {")
       cog.outl("          return false;")
       cog.outl("        }")
-      cog.outl("        break;")
       cog.outl("      }")
       cog.outl("    }")
       cog.outl("  }")
@@ -743,7 +742,6 @@ namespace etl
           cog.outl("        {")
           cog.outl("          return false;")
           cog.outl("        }")
-          cog.outl("        break;")
           cog.outl("      }")
           cog.outl("    }")
           cog.outl("  }")

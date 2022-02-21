@@ -38,10 +38,7 @@ SOFTWARE.
 #include "utility.h"
 #include "functional.h"
 #include "static_assert.h"
-
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  #include <initializer_list>
-#endif
+#include "initializer_list.h"
 
 #ifdef ETL_COMPILER_GCC
 #pragma GCC diagnostic push
@@ -607,6 +604,7 @@ namespace etl
 
     //*********************************************************************
     /// Does nothing.
+    /// For compatilbilty with the STL vector API.
     //*********************************************************************
     void reserve(size_t)
     {
@@ -742,6 +740,14 @@ namespace etl
     void clear()
     {
       initialise();
+    }
+
+    //*************************************************************************
+    /// Fills the buffer.
+    //*************************************************************************
+    void fill(const T& value)
+    {
+      etl::fill(begin(), end(), value);
     }
 
     //*********************************************************************

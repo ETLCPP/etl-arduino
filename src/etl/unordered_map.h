@@ -52,10 +52,7 @@ SOFTWARE.
 #include "debug_count.h"
 #include "iterator.h"
 #include "placement_new.h"
-
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  #include <initializer_list>
-#endif
+#include "initializer_list.h"
 
 //*****************************************************************************
 ///\defgroup unordered_map unordered_map
@@ -745,7 +742,8 @@ namespace etl
 
       while (first_ != last_)
       {
-        insert(*first_++);
+        insert(*first_);
+        ++first_;
       }
     }
 
@@ -937,7 +935,8 @@ namespace etl
     {
       while (first_ != last_)
       {
-        insert(*first_++);
+        insert(*first_);
+        ++first_;
       }
     }
 
@@ -1359,7 +1358,10 @@ namespace etl
     {
       while (first != last)
       {
-        insert(etl::move(*first++));
+        iterator temp = first;
+        ++temp;
+        insert(etl::move(*first));
+        first = temp;
       }
     }
 #endif
