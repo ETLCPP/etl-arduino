@@ -37,7 +37,7 @@ SOFTWARE.
 #include "enum_type.h"
 #include "binary.h"
 
-#if ETL_CPP20_SUPPORTED && ETL_USING_STL
+#if ETL_USING_CPP20 && ETL_USING_STL
   #include <bit>
 #endif
 
@@ -48,7 +48,7 @@ SOFTWARE.
 // Have we not already defined ETL_ENDIAN_NATIVE?
 #if !defined(ETL_ENDIAN_NATIVE)
   // Can we use the C++20 definitions?
-  #if ETL_CPP20_SUPPORTED && ETL_USING_STL
+  #if ETL_USING_CPP20 && ETL_USING_STL
     #define ETL_ENDIAN_LITTLE std::endian::little
     #define ETL_ENDIAN_BIG    std::endian::big
     #define ETL_ENDIAN_NATIVE std::endian::native
@@ -75,10 +75,10 @@ SOFTWARE.
 #endif
 
 // If true, then the endianness of the platform can be constexpr.
-#if (ETL_CPP11_SUPPORTED && defined(ETL_ENDIAN_NATIVE))
-  #define ETL_ENDIANNESS_IS_CONSTEXPR 1
+#if (ETL_USING_CPP11 && defined(ETL_ENDIAN_NATIVE))
+  #define ETL_HAS_CONSTEXPR_ENDIANNESS 1
 #else
-  #define ETL_ENDIANNESS_IS_CONSTEXPR 0
+  #define ETL_HAS_CONSTEXPR_ENDIANNESS 0
 #endif
 
 namespace etl
@@ -113,7 +113,7 @@ namespace etl
       return etl::endian(*this);
     }
 
-#if ETL_ENDIANNESS_IS_CONSTEXPR
+#if ETL_HAS_CONSTEXPR_ENDIANNESS
     ETL_CONSTEXPR
 #endif
     operator etl::endian() const
@@ -121,7 +121,7 @@ namespace etl
       return get();
     }
 
-#if ETL_ENDIANNESS_IS_CONSTEXPR
+#if ETL_HAS_CONSTEXPR_ENDIANNESS
     ETL_CONSTEXPR
 #endif
     static etl::endian value()
@@ -131,7 +131,7 @@ namespace etl
 
   private:
 
-#if ETL_ENDIANNESS_IS_CONSTEXPR
+#if ETL_HAS_CONSTEXPR_ENDIANNESS
     static ETL_CONSTEXPR etl::endian get()
     {
       return etl::endian::native;

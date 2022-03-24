@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2022 jwellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -26,8 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_CALLBACK_TIMER_LOCKED_INCLUDED
-#define ETL_CALLBACK_TIMER_LOCKED_INCLUDED
+#ifndef ETL_CALLBACK_TIMER_INTERRUPT_INCLUDED
+#define ETL_CALLBACK_TIMER_INTERRUPT_INCLUDED
 
 #include <stdint.h>
 
@@ -46,14 +46,12 @@ namespace etl
   //***************************************************************************
   /// Interface for callback timer
   //***************************************************************************
-  class icallback_timer_locked
+  template <typename TInterruptGuard>
+  class icallback_timer_interrupt
   {
   public:
 
     typedef etl::delegate<void(void)> callback_type;
-    typedef etl::delegate<bool(void)> try_lock_type;
-    typedef etl::delegate<void(void)> lock_type;
-    typedef etl::delegate<void(void)> unlock_type;
 
     //*******************************************
     /// Register a timer.
@@ -75,6 +73,9 @@ namespace etl
 
           if (timer.id == etl::timer::id::NO_TIMER)
           {
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             // Create in-place.
             new (&timer) timer_data(i, callback_, period_, repeating_);
             ++number_of_registered_timers;
@@ -102,9 +103,10 @@ namespace etl
         {
           if (timer.is_active())
           {
-            lock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             active_list.remove(timer.id, false);
-            unlock();
           }
 
           // Reset in-place.
@@ -139,16 +141,18 @@ namespace etl
     //*******************************************
     void clear()
     {
-      lock();
-      active_list.clear();
-      unlock();
+      {
+        TInterruptGuard guard;
+        (void)guard; // Silence 'unused variable warnings.
+
+        active_list.clear();
+        number_of_registered_timers = 0;
+      }
 
       for (uint8_t i = 0U; i < MAX_TIMERS; ++i)
       {
         ::new (&timer_array[i]) timer_data();
       }
-
-      number_of_registered_timers = 0;
     }
 
     //*******************************************
@@ -161,47 +165,42 @@ namespace etl
     {
       if (enabled)
       {
-        if (try_lock())
+        // We have something to do?
+        bool has_active = !active_list.empty();       
+
+        if (has_active)
         {
-          // We have something to do?
-          bool has_active = !active_list.empty();       
+          while (has_active && (count >= active_list.front().delta))
+          {
+            timer_data& timer = active_list.front();
+
+            count -= timer.delta;
+
+            active_list.remove(timer.id, true);
+
+            if (timer.callback.is_valid())
+            {
+              timer.callback();
+            }
+
+            if (timer.repeating)
+            {
+              // Reinsert the timer.
+              timer.delta = timer.period;
+              active_list.insert(timer.id);
+            }
+
+            has_active = !active_list.empty();
+          }
 
           if (has_active)
           {
-            while (has_active && (count >= active_list.front().delta))
-            {
-              timer_data& timer = active_list.front();
-
-              count -= timer.delta;
-
-              active_list.remove(timer.id, true);
-
-              if (timer.callback.is_valid())
-              {
-                timer.callback();
-              }
-
-              if (timer.repeating)
-              {
-                // Reinsert the timer.
-                timer.delta = timer.period;
-                active_list.insert(timer.id);
-              }
-
-              has_active = !active_list.empty();
-            }
-
-            if (has_active)
-            {
-              // Subtract any remainder from the next due timeout.
-              active_list.front().delta -= count;
-            }
+            // Subtract any remainder from the next due timeout.
+            active_list.front().delta -= count;
           }
-
-          unlock();
-
-          return true;
         }
+
+        return true;
       }
 
       return false;
@@ -225,7 +224,9 @@ namespace etl
           // Has a valid period.
           if (timer.period != etl::timer::state::INACTIVE)
           {
-            lock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             if (timer.is_active())
             {
               active_list.remove(timer.id, false);
@@ -233,7 +234,6 @@ namespace etl
 
             timer.delta = immediate_ ? 0U : timer.period;
             active_list.insert(timer.id);
-            unlock();
 
             result = true;
           }
@@ -260,9 +260,10 @@ namespace etl
         {
           if (timer.is_active())
           {
-            lock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             active_list.remove(timer.id, false);
-            unlock();
           }
 
           result = true;
@@ -298,16 +299,6 @@ namespace etl
       }
 
       return false;
-    }
-
-    //*******************************************
-    /// Sets the lock and unlock delegates.
-    //*******************************************
-    void set_locks(try_lock_type try_lock_, lock_type lock_, lock_type unlock_)
-    {
-      try_lock = try_lock_;
-      lock     = lock_;
-      unlock   = unlock_;
     }
 
   protected:
@@ -379,7 +370,7 @@ namespace etl
     //*******************************************
     /// Constructor.
     //*******************************************
-    icallback_timer_locked(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
+    icallback_timer_interrupt(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
       : timer_array(timer_array_),
         active_list(timer_array_),
         enabled(false),
@@ -577,10 +568,6 @@ namespace etl
     volatile bool enabled;
     volatile uint_least8_t number_of_registered_timers;
 
-    try_lock_type try_lock; ///< The callback that tries to lock.
-    lock_type     lock;     ///< The callback that locks.
-    unlock_type   unlock;   ///< The callback that unlocks.
-
   public:
 
     const uint_least8_t MAX_TIMERS;
@@ -589,38 +576,26 @@ namespace etl
   //***************************************************************************
   /// The callback timer
   //***************************************************************************
-  template <uint_least8_t MAX_TIMERS_>
-  class callback_timer_locked : public etl::icallback_timer_locked
+  template <uint_least8_t MAX_TIMERS_, typename TInterruptGuard>
+  class callback_timer_interrupt : public etl::icallback_timer_interrupt<TInterruptGuard>
   {
   public:
 
     ETL_STATIC_ASSERT(MAX_TIMERS_ <= 254U, "No more than 254 timers are allowed");
 
-    typedef icallback_timer_locked::callback_type callback_type;
-    typedef icallback_timer_locked::try_lock_type try_lock_type;
-    typedef icallback_timer_locked::lock_type     lock_type;
-    typedef icallback_timer_locked::unlock_type   unlock_type;
+    typedef typename icallback_timer_interrupt<TInterruptGuard>::callback_type callback_type;
 
     //*******************************************
     /// Constructor.
     //*******************************************
-    callback_timer_locked()
-      : icallback_timer_locked(timer_array, MAX_TIMERS_)
+    callback_timer_interrupt()
+      : icallback_timer_interrupt<TInterruptGuard>(timer_array, MAX_TIMERS_)
     {
-    }
-
-    //*******************************************
-    /// Constructor.
-    //*******************************************
-    callback_timer_locked(try_lock_type try_lock_, lock_type lock_, unlock_type unlock_)
-      : icallback_timer_locked(timer_array, MAX_TIMERS_)
-    {
-      this->set_locks(try_lock_, lock_, unlock_);
     }
 
   private:
 
-    timer_data timer_array[MAX_TIMERS_];
+    typename icallback_timer_interrupt<TInterruptGuard>::timer_data timer_array[MAX_TIMERS_];
   };
 }
 

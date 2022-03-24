@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2022 jwellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -26,41 +26,44 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_CALLBACK_TIMER_LOCKED_INCLUDED
-#define ETL_CALLBACK_TIMER_LOCKED_INCLUDED
+#ifndef ETL_MESSAGE_TIMER_INTERRUPT_INCLUDED
+#define ETL_MESSAGE_TIMER_INTERRUPT_INCLUDED
 
 #include <stdint.h>
+#include "algorithm.h"
 
 #include "platform.h"
-
-#include "algorithm.h"
 #include "nullptr.h"
-#include "delegate.h"
+#include "message_types.h"
+#include "message.h"
+#include "message_router.h"
+#include "message_bus.h"
 #include "static_assert.h"
 #include "timer.h"
-#include "error_handler.h"
-#include "placement_new.h"
+#include "delegate.h"
 
 namespace etl
 {
   //***************************************************************************
-  /// Interface for callback timer
+  /// Interface for message timer
   //***************************************************************************
-  class icallback_timer_locked
+  template <typename TInterruptGuard>
+  class imessage_timer_interrupt
   {
   public:
 
     typedef etl::delegate<void(void)> callback_type;
-    typedef etl::delegate<bool(void)> try_lock_type;
-    typedef etl::delegate<void(void)> lock_type;
-    typedef etl::delegate<void(void)> unlock_type;
+
+  public:
 
     //*******************************************
     /// Register a timer.
     //*******************************************
-    etl::timer::id::type register_timer(const callback_type& callback_,
-                                        uint32_t             period_,
-                                        bool                 repeating_)
+    etl::timer::id::type register_timer(const etl::imessage&     message_,
+                                        etl::imessage_router&    router_,
+                                        uint32_t                 period_,
+                                        bool                     repeating_,
+                                        etl::message_router_id_t destination_router_id_ = etl::imessage_router::ALL_MESSAGE_ROUTERS)
     {
       etl::timer::id::type id = etl::timer::id::NO_TIMER;
 
@@ -68,18 +71,25 @@ namespace etl
 
       if (is_space)
       {
-        // Search for the free space.
-        for (uint_least8_t i = 0U; i < MAX_TIMERS; ++i)
+        // There's no point adding null message routers.
+        if (!router_.is_null_router())
         {
-          timer_data& timer = timer_array[i];
-
-          if (timer.id == etl::timer::id::NO_TIMER)
+          // Search for the free space.
+          for (uint_least8_t i = 0U; i < MAX_TIMERS; ++i)
           {
-            // Create in-place.
-            new (&timer) timer_data(i, callback_, period_, repeating_);
-            ++number_of_registered_timers;
-            id = i;
-            break;
+            timer_data& timer = timer_array[i];
+
+            if (timer.id == etl::timer::id::NO_TIMER)
+            {
+              TInterruptGuard guard;
+              (void)guard; // Silence 'unused variable warnings.
+
+              // Create in-place.
+              new (&timer) timer_data(i, message_, router_, period_, repeating_, destination_router_id_);
+              ++number_of_registered_timers;
+              id = i;
+              break;
+            }
           }
         }
       }
@@ -102,9 +112,10 @@ namespace etl
         {
           if (timer.is_active())
           {
-            lock();
-            active_list.remove(timer.id, false);
-            unlock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
+            active_list.remove(timer.id, true);
           }
 
           // Reset in-place.
@@ -139,16 +150,19 @@ namespace etl
     //*******************************************
     void clear()
     {
-      lock();
-      active_list.clear();
-      unlock();
-
-      for (uint8_t i = 0U; i < MAX_TIMERS; ++i)
       {
-        ::new (&timer_array[i]) timer_data();
+        TInterruptGuard guard;
+        (void)guard; // Silence 'unused variable warnings.
+
+        active_list.clear();
       }
 
-      number_of_registered_timers = 0;
+      for (int i = 0; i < MAX_TIMERS; ++i)
+      {
+        new (&timer_array[i]) timer_data();
+      }
+
+      number_of_registered_timers = 0U;
     }
 
     //*******************************************
@@ -161,47 +175,42 @@ namespace etl
     {
       if (enabled)
       {
-        if (try_lock())
+        // We have something to do?
+        bool has_active = !active_list.empty();
+
+        if (has_active)
         {
-          // We have something to do?
-          bool has_active = !active_list.empty();       
+          while (has_active && (count >= active_list.front().delta))
+          {
+            timer_data& timer = active_list.front();
+
+            count -= timer.delta;
+
+            active_list.remove(timer.id, true);
+
+            if (timer.p_router != ETL_NULLPTR)
+            {
+              timer.p_router->receive(timer.destination_router_id, *(timer.p_message));
+            }
+
+            if (timer.repeating)
+            {
+              // Reinsert the timer.
+              timer.delta = timer.period;
+              active_list.insert(timer.id);
+            }
+
+            has_active = !active_list.empty();
+          }
 
           if (has_active)
           {
-            while (has_active && (count >= active_list.front().delta))
-            {
-              timer_data& timer = active_list.front();
-
-              count -= timer.delta;
-
-              active_list.remove(timer.id, true);
-
-              if (timer.callback.is_valid())
-              {
-                timer.callback();
-              }
-
-              if (timer.repeating)
-              {
-                // Reinsert the timer.
-                timer.delta = timer.period;
-                active_list.insert(timer.id);
-              }
-
-              has_active = !active_list.empty();
-            }
-
-            if (has_active)
-            {
-              // Subtract any remainder from the next due timeout.
-              active_list.front().delta -= count;
-            }
+            // Subtract any remainder from the next due timeout.
+            active_list.front().delta -= count;
           }
-
-          unlock();
-
-          return true;
         }
+
+        return true;
       }
 
       return false;
@@ -225,15 +234,16 @@ namespace etl
           // Has a valid period.
           if (timer.period != etl::timer::state::INACTIVE)
           {
-            lock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             if (timer.is_active())
             {
               active_list.remove(timer.id, false);
             }
 
-            timer.delta = immediate_ ? 0U : timer.period;
+            timer.delta = immediate_ ? 0 : timer.period;
             active_list.insert(timer.id);
-            unlock();
 
             result = true;
           }
@@ -260,9 +270,10 @@ namespace etl
         {
           if (timer.is_active())
           {
-            lock();
+            TInterruptGuard guard;
+            (void)guard; // Silence 'unused variable warnings.
+
             active_list.remove(timer.id, false);
-            unlock();
           }
 
           result = true;
@@ -300,16 +311,6 @@ namespace etl
       return false;
     }
 
-    //*******************************************
-    /// Sets the lock and unlock delegates.
-    //*******************************************
-    void set_locks(try_lock_type try_lock_, lock_type lock_, lock_type unlock_)
-    {
-      try_lock = try_lock_;
-      lock     = lock_;
-      unlock   = unlock_;
-    }
-
   protected:
 
     //*************************************************************************
@@ -318,9 +319,11 @@ namespace etl
     {
       //*******************************************
       timer_data()
-        : callback()
-        , period(0U)
+        : p_message(ETL_NULLPTR)
+        , p_router(ETL_NULLPTR)
+        , period(0)
         , delta(etl::timer::state::INACTIVE)
+        , destination_router_id(etl::imessage_bus::ALL_MESSAGE_ROUTERS)
         , id(etl::timer::id::NO_TIMER)
         , previous(etl::timer::id::NO_TIMER)
         , next(etl::timer::id::NO_TIMER)
@@ -329,15 +332,17 @@ namespace etl
       }
 
       //*******************************************
-      /// ETL delegate callback
-      //*******************************************
-      timer_data(etl::timer::id::type id_,
-                 callback_type        callback_,
-                 uint32_t             period_,
-                 bool                 repeating_)
-        : callback(callback_)
+      timer_data(etl::timer::id::type     id_,
+                 const etl::imessage&     message_,
+                 etl::imessage_router&    irouter_,
+                 uint32_t                 period_,
+                 bool                     repeating_,
+                 etl::message_router_id_t destination_router_id_ = etl::imessage_bus::ALL_MESSAGE_ROUTERS)
+        : p_message(&message_)
+        , p_router(&irouter_)
         , period(period_)
         , delta(etl::timer::state::INACTIVE)
+        , destination_router_id(destination_router_id_)
         , id(id_)
         , previous(etl::timer::id::NO_TIMER)
         , next(etl::timer::id::NO_TIMER)
@@ -361,30 +366,39 @@ namespace etl
         delta = etl::timer::state::INACTIVE;
       }
 
-      callback_type        callback;
-      uint32_t             period;
-      uint32_t             delta;
-      etl::timer::id::type id;
-      uint_least8_t        previous;
-      uint_least8_t        next;
-      bool                 repeating;
+      const etl::imessage* p_message;
+      etl::imessage_router* p_router;
+      uint32_t                 period;
+      uint32_t                 delta;
+      etl::message_router_id_t destination_router_id;
+      etl::timer::id::type     id;
+      uint_least8_t            previous;
+      uint_least8_t            next;
+      bool                     repeating;
 
     private:
 
       // Disabled.
-      timer_data(const timer_data& other) ETL_DELETE;
-      timer_data& operator =(const timer_data& other) ETL_DELETE;
+      timer_data(const timer_data& other);
+      timer_data& operator =(const timer_data& other);
     };
 
     //*******************************************
     /// Constructor.
     //*******************************************
-    icallback_timer_locked(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
-      : timer_array(timer_array_),
-        active_list(timer_array_),
-        enabled(false),
-        number_of_registered_timers(0U),
-        MAX_TIMERS(MAX_TIMERS_)
+    imessage_timer_interrupt(timer_data* const timer_array_, const uint_least8_t  MAX_TIMERS_)
+      : timer_array(timer_array_)
+      , active_list(timer_array_)
+      , enabled(false)
+      , number_of_registered_timers(0U)
+      , MAX_TIMERS(MAX_TIMERS_)
+    {
+    }
+
+    //*******************************************
+    /// Destructor.
+    //*******************************************
+    ~imessage_timer_interrupt()
     {
     }
 
@@ -577,50 +591,34 @@ namespace etl
     volatile bool enabled;
     volatile uint_least8_t number_of_registered_timers;
 
-    try_lock_type try_lock; ///< The callback that tries to lock.
-    lock_type     lock;     ///< The callback that locks.
-    unlock_type   unlock;   ///< The callback that unlocks.
-
   public:
 
     const uint_least8_t MAX_TIMERS;
   };
 
   //***************************************************************************
-  /// The callback timer
+  /// The message timer
   //***************************************************************************
-  template <uint_least8_t MAX_TIMERS_>
-  class callback_timer_locked : public etl::icallback_timer_locked
+  template <uint_least8_t MAX_TIMERS_, typename TInterruptGuard>
+  class message_timer_interrupt : public etl::imessage_timer_interrupt<TInterruptGuard>
   {
   public:
 
-    ETL_STATIC_ASSERT(MAX_TIMERS_ <= 254U, "No more than 254 timers are allowed");
+    ETL_STATIC_ASSERT(MAX_TIMERS_ <= 254, "No more than 254 timers are allowed");
 
-    typedef icallback_timer_locked::callback_type callback_type;
-    typedef icallback_timer_locked::try_lock_type try_lock_type;
-    typedef icallback_timer_locked::lock_type     lock_type;
-    typedef icallback_timer_locked::unlock_type   unlock_type;
+    typedef typename imessage_timer_interrupt<TInterruptGuard>::callback_type callback_type;
 
     //*******************************************
     /// Constructor.
     //*******************************************
-    callback_timer_locked()
-      : icallback_timer_locked(timer_array, MAX_TIMERS_)
+    message_timer_interrupt()
+      : imessage_timer_interrupt<TInterruptGuard>(timer_array, MAX_TIMERS_)
     {
-    }
-
-    //*******************************************
-    /// Constructor.
-    //*******************************************
-    callback_timer_locked(try_lock_type try_lock_, lock_type lock_, unlock_type unlock_)
-      : icallback_timer_locked(timer_array, MAX_TIMERS_)
-    {
-      this->set_locks(try_lock_, lock_, unlock_);
     }
 
   private:
 
-    timer_data timer_array[MAX_TIMERS_];
+    typename etl::imessage_timer_interrupt<TInterruptGuard>::timer_data timer_array[MAX_TIMERS_];
   };
 }
 

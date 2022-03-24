@@ -44,6 +44,7 @@ SOFTWARE.
 #include "static_assert.h"
 #include "error_handler.h"
 #include "nth_type.h"
+#include "initializer_list.h"
 
 ///\defgroup array array
 /// A replacement for std::array if you haven't got C++0x11.
@@ -566,7 +567,7 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED
+#if ETL_USING_CPP17
   template <typename... T>
   array(T...) -> array<typename etl::common_type<T...>::type, sizeof...(T)>;
 #endif  
@@ -574,7 +575,7 @@ namespace etl
   //*************************************************************************
   /// Make
   //*************************************************************************
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
   template <typename T, typename... TValues>
   constexpr auto make_array(TValues&&... values) -> etl::array<T, sizeof...(TValues)>
   {

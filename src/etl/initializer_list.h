@@ -7,6 +7,8 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
+Documentation: https://www.etlcpp.com/initializer_list.html
+
 Copyright(c) 2022 jwellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,29 +35,33 @@ SOFTWARE.
 
 #include "platform.h"
 
-#if ETL_CPP11_SUPPORTED
+#if (defined(ETL_FORCE_ETL_INITIALIZER_LIST) && defined(ETL_FORCE_STD_INITIALIZER_LIST))
+  #error ETL_FORCE_ETL_INITIALIZER_LIST and ETL_FORCE_STD_INITIALIZER_LIST both been defined. Choose one or neither.
+#endif
+
+#if (ETL_USING_CPP11 && !defined(ETL_NO_INITIALIZER_LIST))
 
 #include <stddef.h>
 
-
-
-#if ((ETL_USING_STL && ETL_NOT_USING_STLPORT) || defined(ETL_IN_UNIT_TEST)) && !defined(ETL_IN_UNIT_TEST_INITIALIZER_LIST)
+// Use the compiler's std::initializer_list?
+#if (ETL_USING_STL && ETL_NOT_USING_STLPORT && !defined(ETL_FORCE_ETL_INITIALIZER_LIST)) || defined(ETL_IN_UNIT_TEST) || defined(ETL_FORCE_STD_INITIALIZER_LIST)
   
-  #define ETL_USING_INITIALIZER_LIST 1
+  #define ETL_HAS_INITIALIZER_LIST 1
 	#include <initializer_list>
 
 #else
 
+// Use the ETL's std::initializer_list
 namespace std
 {
-#if defined(ETL_COMPILER_MICROSOFT)
+#if defined(ETL_COMPILER_MICROSOFT) 
 
-  #define ETL_USING_INITIALIZER_LIST 1
+  #define ETL_HAS_INITIALIZER_LIST 1
 
   ///**************************************************************************
   /// A definition of initializer_list that is compatible with the Microsoft compiler
   ///**************************************************************************
-  template<typename T>
+  template <typename T>
   class initializer_list
   {
   public:
@@ -125,7 +131,7 @@ namespace std
   //*************************************************************************
   /// Get the end of the list.
   //*************************************************************************
-  template<typename T>
+  template <typename T>
   constexpr const T* end(initializer_list<T> init) noexcept
   {
     return init.end();
@@ -135,7 +141,7 @@ namespace std
       defined(ETL_COMPILER_ARM7) || defined(ETL_COMPILER_IAR)   || defined(ETL_COMPILER_TEXAS_INSTRUMENTS) || \
       defined(ETL_COMPILER_INTEL)
 
-  #define ETL_USING_INITIALIZER_LIST 1
+  #define ETL_HAS_INITIALIZER_LIST 1
 
   ///**************************************************************************
   /// A definition of initializer_list that is compatible with Clang, GCC and other compilers.
@@ -219,15 +225,26 @@ namespace std
 #else
 
   #error No definition for initializer_list is currently available for your compiler. Visit https://github.com/ETLCPP/etl/issues to request support.
-  #define ETL_USING_INITIALIZER_LIST 0
+  #define ETL_HAS_INITIALIZER_LIST 0
 
 #endif // Compiler tests
 }
-#endif // ETL_USING_STL
+
+#endif // ETL_USE_STD_INITIALIZER_LIST
 #else
 
-  #define ETL_USING_INITIALIZER_LIST 0
+  #define ETL_HAS_INITIALIZER_LIST 0
 
-#endif // ETL_CPP11_SUPPORTED
+#endif // ETL_USE_INITIALIZER_LIST
+
+namespace etl
+{
+  namespace traits
+  {
+    // Documentation: https://www.etlcpp.com/etl_traits.html
+
+    static ETL_CONSTANT bool has_initializer_list = (ETL_HAS_INITIALIZER_LIST == 1);
+  }
+}
 
 #endif // ETL_INITIALIZER_LIST_INCLUDED
