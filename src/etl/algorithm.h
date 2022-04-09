@@ -295,8 +295,6 @@ namespace etl
   typename etl::enable_if<etl::is_pointer<TIterator>::value, void>::type
     reverse(TIterator b, TIterator e)
   {
-    typedef typename etl::iterator_traits<TIterator>::value_type value_type;
-
     if (b != e)
     {
       while (b < --e)
@@ -1217,6 +1215,7 @@ namespace etl
                         TCompare  compare)
   {
     TIterator minimum = begin;
+    ++begin;
 
     while (begin != end)
     {
@@ -1260,6 +1259,7 @@ namespace etl
                         TCompare  compare)
   {
     TIterator maximum = begin;
+    ++begin;
 
     while (begin != end)
     {
@@ -1304,6 +1304,7 @@ namespace etl
   {
     TIterator minimum = begin;
     TIterator maximum = begin;
+    ++begin;
 
     while (begin != end)
     {
