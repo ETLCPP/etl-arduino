@@ -19,3 +19,10 @@ https://github.com/ETLCPP/etl
 
 See (https://www.etlcpp.com/arduino.html) for up-to-date information.
 
+If you already have the main ETL library from GitHub, you can generate the Arduino compatible variant by running a python script.
+
+You must ensure that you have a directory named ```etl-arduino``` in the same parent directory as ```etl```
+
+Change directory to ```etl/scripts``` and run the python script ```update_releases.py```
+
+This will copy the ETL files into ```etl-arduino``` with a directory structure compatible with the Arduino library system.
