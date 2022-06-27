@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -65,6 +65,7 @@ namespace etl
   template <typename T>
   constexpr T&& forward(typename etl::remove_reference<T>::type&& t) ETL_NOEXCEPT
   {
+    ETL_STATIC_ASSERT(!etl::is_lvalue_reference<T>::value, "Invalid rvalue to lvalue conversion");
     return static_cast<T&&>(t);
   }
 #endif
@@ -434,14 +435,6 @@ namespace etl
 #if ETL_USING_CPP17
   template <size_t I>
   inline constexpr in_place_index_t<I> in_place_index{};
-#endif
-
-  //***************************************************************************
-  /// declval
-  //***************************************************************************
-#if ETL_USING_CPP11
-  template <typename T>
-  typename etl::add_rvalue_reference<T>::type declval() ETL_NOEXCEPT;
 #endif
 
 #if ETL_USING_CPP11

@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, rlindeman
+Copyright(c) 2014 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -1902,7 +1902,7 @@ namespace etl
           }
           else
           {
-            // Attatch node to right
+            // Attach node to right
             attach_node(found->children[found->dir], node);
 
             // Return newly added node
@@ -1935,7 +1935,7 @@ namespace etl
       }
       else
       {
-        // Attatch node to current position
+        // Attach node to current position
         attach_node(position, node);
 
         // Return newly added node at current position

@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -92,7 +92,7 @@ namespace etl
   //*********************************************************************
   /// The object that is being observed.
   ///\tparam TObserver     The observer type.
-  ///\tparam MAX_OBSERVERS The maximum number of observers that can be accomodated.
+  ///\tparam MAX_OBSERVERS The maximum number of observers that can be accommodated.
   ///\ingroup observer
   //*********************************************************************
   template <typename TObserver, const size_t MAX_OBSERVERS>

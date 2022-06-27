@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -224,7 +224,7 @@ namespace etl
     ///\param new_size The new size.
     ///\param value   The value to fill new elements with. Default = default constructed value.
     //*********************************************************************
-    void resize(size_t new_size, T value)
+    void resize(size_t new_size, const_reference value)
     {
       ETL_ASSERT(new_size <= CAPACITY, ETL_ERROR(vector_full));
 
@@ -269,7 +269,7 @@ namespace etl
 
     //*********************************************************************
     /// Does nothing.
-    /// For compatilbilty with the STL vector API.
+    /// For compatibility with the STL vector API.
     //*********************************************************************
     void reserve(size_t)
     {

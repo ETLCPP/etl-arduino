@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -43,8 +43,8 @@ namespace etl
 {
   //***************************************************************************
   ///\ingroup fibonacci
-  /// Defines <b>value</b> as the Nth Fibbonacci number.
-  ///\tparam N The number to find the Fibbonacci value of.
+  /// Defines <b>value</b> as the Nth Fibonacci number.
+  ///\tparam N The number to find the Fibonacci value of.
   //***************************************************************************
   template <size_t N>
   struct fibonacci

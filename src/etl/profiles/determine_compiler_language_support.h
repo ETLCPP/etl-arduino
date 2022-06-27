@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -149,8 +149,12 @@ SOFTWARE.
   #define ETL_NO_NULLPTR_SUPPORT ETL_CPP11_NOT_SUPPORTED
 #endif
 
+#if !defined(ETL_NO_SMALL_CHAR_SUPPORT)
+  #define ETL_NO_SMALL_CHAR_SUPPORT ETL_CPP20_NOT_SUPPORTED
+#endif
+
 #if !defined(ETL_NO_LARGE_CHAR_SUPPORT)
-  #define ETL_NO_LARGE_CHAR_SUPPORT ETL_CPP11_NOT_SUPPORTED
+#define ETL_NO_LARGE_CHAR_SUPPORT ETL_CPP11_NOT_SUPPORTED
 #endif
 
 #if !defined(ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED)
@@ -163,6 +167,21 @@ SOFTWARE.
 #define ETL_USING_CPP17 (ETL_CPP17_SUPPORTED == 1)
 #define ETL_USING_CPP20 (ETL_CPP20_SUPPORTED == 1)
 #define ETL_USING_CPP23 (ETL_CPP23_SUPPORTED == 1)
+
+// Language standard
+#if ETL_USING_CPP23
+  #define ETL_LANGUAGE_STANDARD 23
+#elif ETL_USING_CPP20
+  #define ETL_LANGUAGE_STANDARD 20
+#elif ETL_USING_CPP17
+  #define ETL_LANGUAGE_STANDARD 17
+#elif ETL_USING_CPP14
+  #define ETL_LANGUAGE_STANDARD 14
+#elif ETL_USING_CPP11
+  #define ETL_LANGUAGE_STANDARD 11
+#else
+  #define ETL_LANGUAGE_STANDARD 3
+#endif
 
 // NAN not defined or Rowley CrossWorks
 #if !defined(NAN) || defined(__CROSSWORKS_ARM) || defined(ETL_COMPILER_ARM5) || defined(ARDUINO)

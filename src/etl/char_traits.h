@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -42,15 +42,6 @@ SOFTWARE.
 /// Character traits
 ///\ingroup string
 //*****************************************************************************
-
-// Define the large character types if necessary.
-#if (ETL_NO_LARGE_CHAR_SUPPORT)
-#if ETL_USING_8BIT_TYPES
-typedef int8_t char8_t;
-#endif
-typedef int16_t char16_t;
-typedef int32_t char32_t;
-#endif
 
 namespace etl
 {

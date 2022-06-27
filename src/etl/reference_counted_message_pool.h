@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -61,7 +61,7 @@ namespace etl
   //***************************************************************************
   /// Exception if the allocation failed.
   //***************************************************************************
-  class reference_counted_message_pool_allocation_failure : etl::reference_counted_message_pool_exception
+  class reference_counted_message_pool_allocation_failure : public etl::reference_counted_message_pool_exception
   {
   public:
 
@@ -74,7 +74,7 @@ namespace etl
   //***************************************************************************
   /// Exception if the release failed.
   //***************************************************************************
-  class reference_counted_message_pool_release_failure : etl::reference_counted_message_pool_exception
+  class reference_counted_message_pool_release_failure : public etl::reference_counted_message_pool_exception
   {
   public:
 
@@ -155,13 +155,18 @@ namespace etl
     }
 
     //*************************************************************************
-    /// Destruct a message and send it back to the pool.
+    /// Destruct a message and send it back to the allocator.
     //*************************************************************************
     void release(const etl::ireference_counted_message& rcmessage)
     {
-      rcmessage.~ireference_counted_message();
+      bool released = false;
+
       lock();
-      bool released = memory_block_allocator.release(&rcmessage);
+      if (memory_block_allocator.is_owner_of(&rcmessage))
+      {
+        rcmessage.~ireference_counted_message();
+        released = memory_block_allocator.release(&rcmessage);
+      }
       unlock();
 
       ETL_ASSERT(released, ETL_ERROR(etl::reference_counted_message_pool_release_failure));

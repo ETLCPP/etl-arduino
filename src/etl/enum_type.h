@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -85,9 +85,7 @@ SOFTWARE.
 #define ETL_DECLARE_ENUM_TYPE(TypeName, ValueType) \
   typedef ValueType value_type; \
 	ETL_CONSTEXPR TypeName() : value(static_cast<enum_type>(value_type())) {} \
-	ETL_CONSTEXPR TypeName(const TypeName &other) : value(other.value) {} \
 	ETL_CONSTEXPR TypeName(enum_type value_) : value(value_) {} \
-  ETL_CONSTEXPR14 TypeName& operator=(const TypeName &other) {value = other.value; return *this;} \
   ETL_CONSTEXPR explicit TypeName(value_type value_) : value(static_cast<enum_type>(value_)) {} \
 	ETL_CONSTEXPR operator value_type() const {return static_cast<value_type>(value);} \
   ETL_CONSTEXPR value_type get_value() const {return static_cast<value_type>(value);} \

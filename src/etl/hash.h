@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -35,6 +35,8 @@ SOFTWARE.
 #include <stdlib.h>
 
 #include "platform.h"
+
+#if ETL_USING_8BIT_TYPES
 
 // The default hash calculation.
 #include "fnv_1.h"
@@ -435,5 +437,7 @@ namespace etl
     }
   };
 }
+
+#endif // ETL_USING_8BIT_TYPES
 
 #endif

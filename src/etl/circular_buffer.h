@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -95,7 +95,15 @@ namespace etl
     //*************************************************************************
     bool full() const
     {
-      return (in + 1U) % BUFFER_SIZE == out;
+      size_t i = in;
+
+      ++i;
+      if (i == BUFFER_SIZE) ETL_UNLIKELY
+      {
+        i = 0U;
+      }
+
+      return i == out;
     }
 
     //*************************************************************************
@@ -124,6 +132,26 @@ namespace etl
       , in(0U)
       , out(0U)
     {
+    }
+
+    //*************************************************************************
+    void increment_in()
+    {
+      ++in;
+      if (in == BUFFER_SIZE) ETL_UNLIKELY
+      {
+        in = 0U;
+      }
+    }
+
+    //*************************************************************************
+    void increment_out()
+    {
+      ++out;
+      if (out == BUFFER_SIZE) ETL_UNLIKELY
+      {
+        out = 0U;
+      }
     }
 
     const size_type BUFFER_SIZE;
@@ -268,9 +296,7 @@ namespace etl
       //*************************************************************************
       iterator& operator +=(int n)
       {
-        n = picb->BUFFER_SIZE + n;
-
-        current += n;
+        current += size_type(picb->BUFFER_SIZE + n);
         current %= picb->BUFFER_SIZE;
 
         return (*this);
@@ -541,9 +567,7 @@ namespace etl
       //*************************************************************************
       const_iterator& operator +=(int n)
       {
-        n = picb->BUFFER_SIZE + n;
-
-        current += n;
+        current += size_type(picb->BUFFER_SIZE + n);
         current %= picb->BUFFER_SIZE;
 
         return (*this);
@@ -835,14 +859,14 @@ namespace etl
     void push(const_reference item)
     {
       ::new (&pbuffer[in]) T(item);
-      in = (in + 1U) % BUFFER_SIZE;
+      increment_in();
 
       // Did we catch up with the 'out' index?
       if (in == out)
       {
         // Forget about the oldest one.
         pbuffer[out].~T();
-        out = (out + 1U) % BUFFER_SIZE;
+        this->increment_out();
       }
       else
       {
@@ -859,14 +883,14 @@ namespace etl
     void push(rvalue_reference item)
     {
       ::new (&pbuffer[in]) T(etl::move(item));
-      in = (in + 1U) % BUFFER_SIZE;
+      increment_in();
 
       // Did we catch up with the 'out' index?
       if (in == out)
       {
         // Forget about the oldest item.
         pbuffer[out].~T();
-        out = (out + 1U) % BUFFER_SIZE;
+        increment_out();
       }
       else
       {
@@ -895,7 +919,7 @@ namespace etl
     {
       ETL_ASSERT(!empty(), ETL_ERROR(circular_buffer_empty));
       pbuffer[out].~T();
-      out = (out + 1U) % BUFFER_SIZE;
+      increment_out();
       ETL_DECREMENT_DEBUG_COUNT
     }
 
@@ -1012,6 +1036,8 @@ namespace etl
         return index - reference_index;
       }
     }
+
+
 
     pointer pbuffer;
 

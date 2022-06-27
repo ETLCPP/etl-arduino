@@ -7,7 +7,7 @@
 //https://github.com/ETLCPP/etl
 //https://www.etlcpp.com
 //
-//Copyright(c) 2021 jwellbelove
+//Copyright(c) 2021 John Wellbelove
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy
 //of this software and associated documentation files(the "Software"), to deal
@@ -35,7 +35,7 @@
 #include "vector.h"
 
 ///\defgroup multi_vector multi_vector
-/// A multi dimentional vector.
+/// A multi dimensional vector.
 ///\ingroup containers
 
 #if ETL_USING_CPP11

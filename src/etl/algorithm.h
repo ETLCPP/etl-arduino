@@ -9,7 +9,7 @@ https://www.etlcpp.com
 
 Documentation: https://www.etlcpp.com/algorithm.html
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -106,14 +106,14 @@ namespace etl
   //***************************************************************************
   // swap_ranges
   //***************************************************************************
-  template <typename T1terator1, typename TIterator2>
+  template <typename TIterator1, typename TIterator2>
 #if ETL_USING_STD_NAMESPACE
   ETL_CONSTEXPR20
 #else
   ETL_CONSTEXPR14
 #endif
-  TIterator2 swap_ranges(T1terator1 first1,
-                         T1terator1 last1,
+  TIterator2 swap_ranges(TIterator1 first1,
+                         TIterator1 last1,
                          TIterator2 first2)
   {
     while (first1 != last1)
@@ -295,8 +295,6 @@ namespace etl
   typename etl::enable_if<etl::is_pointer<TIterator>::value, void>::type
     reverse(TIterator b, TIterator e)
   {
-    typedef typename etl::iterator_traits<TIterator>::value_type value_type;
-
     if (b != e)
     {
       while (b < --e)
@@ -1217,6 +1215,7 @@ namespace etl
                         TCompare  compare)
   {
     TIterator minimum = begin;
+    ++begin;
 
     while (begin != end)
     {
@@ -1260,6 +1259,7 @@ namespace etl
                         TCompare  compare)
   {
     TIterator maximum = begin;
+    ++begin;
 
     while (begin != end)
     {
@@ -1304,6 +1304,7 @@ namespace etl
   {
     TIterator minimum = begin;
     TIterator maximum = begin;
+    ++begin;
 
     while (begin != end)
     {

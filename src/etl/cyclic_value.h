@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -172,7 +172,7 @@ namespace etl
     //*************************************************************************
     cyclic_value& operator ++()
     {
-      if (value >= LAST)
+      if (value >= LAST) ETL_UNLIKELY
       {
         value = FIRST;
       }
@@ -201,7 +201,7 @@ namespace etl
     //*************************************************************************
     cyclic_value& operator --()
     {
-      if (value <= FIRST)
+      if (value <= FIRST) ETL_UNLIKELY
       {
         value = LAST;
       }
