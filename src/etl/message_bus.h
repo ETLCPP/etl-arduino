@@ -26,10 +26,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_MESSAGE_BUS_INCLUDED
-#define ETL_MESSAGE_BUS_INCLUDED
+#ifndef ETL_MESSAGE_BUS_
+#define ETL_MESSAGE_BUS_
 
 #include <stdint.h>
+#include "algorithm.h"
+
 #include "platform.h"
 #include "algorithm.h"
 #include "vector.h"
@@ -206,9 +208,9 @@ namespace etl
           // Do any message buses.
           // These are always at the end of the list.
           router_list_t::iterator irouter = etl::lower_bound(router_list.begin(),
-                                                             router_list.end(),
-                                                             etl::imessage_bus::MESSAGE_BUS,
-                                                             compare_router_id());
+                                     router_list.end(),
+                                     etl::imessage_bus::MESSAGE_BUS,
+                                     compare_router_id());
 
           while (irouter != router_list.end())
           {
@@ -334,7 +336,7 @@ namespace etl
     //*******************************************
     void clear()
     {
-      router_list.clear();
+      return router_list.clear();
     }
 
     //********************************************
