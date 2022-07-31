@@ -280,7 +280,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, const_reference value)
+    iterator insert(const_iterator /*position*/, const_reference value)
     {
       return insert(value).first;
     }
@@ -292,7 +292,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, rvalue_reference value)
+    iterator insert(const_iterator /*position*/, rvalue_reference value)
     {
       return insert(etl::move(value)).first;
     }
@@ -888,7 +888,7 @@ namespace etl
 #if ETL_USING_CPP11
     //*************************************************************************
     /// Move a flat_set.
-    /// Assumes the rhs is initialised and empty.
+    /// Assumes the flat_set is initialised and empty.
     //*************************************************************************
     void move_container(iflat_set&& rhs)
     {

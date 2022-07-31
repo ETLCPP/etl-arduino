@@ -51,6 +51,7 @@ SOFTWARE.
 #include "utility.h"
 #include "error_handler.h"
 #include "span.h"
+#include "file_error_numbers.h"
 
 #if ETL_HAS_ATOMIC
 
@@ -77,7 +78,7 @@ namespace etl
   public:
 
     bip_buffer_reserve_invalid(string_type file_name_, numeric_type line_number_)
-      : bip_buffer_exception("bip_buffer:reserve", file_name_, line_number_)
+      : bip_buffer_exception(ETL_ERROR_TEXT("bip_buffer:reserve", ETL_BIP_BUFFER_SPSC_ATOMIC_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -200,7 +201,7 @@ namespace etl
     }
 
     //*************************************************************************
-    size_type get_write_reserve(size_type* psize)
+    size_type get_write_reserve(size_type* psize, size_type fallback_size = numeric_limits<size_type>::max())
     {
       size_type write_index = write.load(etl::memory_order_relaxed);
       size_type read_index = read.load(etl::memory_order_acquire);
@@ -215,8 +216,9 @@ namespace etl
         {
           return write_index;
         }
-        // There isn't more space even when wrapping around
-        else if (read_index <= (forward_size + 1))
+        // There isn't more space even when wrapping around,
+        // or the linear size is good enough as fallback
+        else if ((read_index <= (forward_size + 1)) || (fallback_size <= forward_size))
         {
           *psize = forward_size;
           return write_index;
@@ -384,9 +386,9 @@ namespace etl
     using base_t::max_size;
 
     //*************************************************************************
-    // Reserves a memory area for reading up to the max_reserve_size
+    // Reserves a memory area for reading (up to the max_reserve_size).
     //*************************************************************************
-    span<T> read_reserve(size_type max_reserve_size)
+    span<T> read_reserve(size_type max_reserve_size = numeric_limits<size_type>::max())
     {
       size_type reserve_size = max_reserve_size;
       size_type rindex = get_read_reserve(&reserve_size);
@@ -406,7 +408,7 @@ namespace etl
     }
 
     //*************************************************************************
-    // Reserves a memory area for writing up to the max_reserve_size
+    // Reserves a memory area for writing up to the max_reserve_size.
     //*************************************************************************
     span<T> write_reserve(size_type max_reserve_size)
     {
@@ -414,6 +416,18 @@ namespace etl
       size_type windex = get_write_reserve(&reserve_size);
         
       return span<T>(p_buffer + windex, reserve_size);
+    }
+
+    //*************************************************************************
+    // Reserves an optimal memory area for writing. The buffer will only wrap
+    // around if the available forward space is less than min_reserve_size.
+    //*************************************************************************
+    span<T> write_reserve_optimal(size_type min_reserve_size = 1U)
+    {
+        size_type reserve_size = numeric_limits<size_type>::max();
+        size_type windex = get_write_reserve(&reserve_size, min_reserve_size);
+
+        return span<T>(p_buffer + windex, reserve_size);
     }
 
     //*************************************************************************
@@ -433,7 +447,7 @@ namespace etl
     void clear()
     {
       // the buffer might be split into two contiguous blocks
-      for (span<T> reader = read_reserve(max_size()); reader.size() > 0; reader = read_reserve(max_size()))
+      for (span<T> reader = read_reserve(); reader.size() > 0; reader = read_reserve())
       {
         destroy(reader.begin(), reader.end());
         read_commit(reader);
