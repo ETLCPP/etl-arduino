@@ -31,11 +31,11 @@ SOFTWARE.
 #ifndef ETL_INTEGRAL_LIMITS_INCLUDED
 #define ETL_INTEGRAL_LIMITS_INCLUDED
 
-#include <stddef.h>
-#include <limits.h>
-
 #include "platform.h"
 #include "type_traits.h"
+
+#include <stddef.h>
+#include <limits.h>
 
 #include "private/minmax_push.h"
 
@@ -215,6 +215,8 @@ namespace etl
     static ETL_CONSTANT int bits               = CHAR_BIT * (sizeof(unsigned long long) / sizeof(char));
     static ETL_CONSTANT bool is_signed         = etl::is_signed<unsigned long long>::value;
   };
+
+  static ETL_CONSTANT size_t npos = etl::integral_limits<size_t>::max;
 }
 
 #include "private/minmax_pop.h"

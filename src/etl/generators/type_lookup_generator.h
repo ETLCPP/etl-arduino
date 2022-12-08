@@ -29,13 +29,13 @@ SOFTWARE.
 #ifndef ETL_TYPE_LOOKUP_INCLUDED
 #define ETL_TYPE_LOOKUP_INCLUDED
 
-#include <limits.h>
-
 #include "platform.h"
 #include "type_traits.h"
 #include "static_assert.h"
 #include "integral_limits.h"
 #include "null_type.h"
+
+#include <limits.h>
 
 /*[[[cog
 import cog
@@ -274,7 +274,7 @@ namespace etl
   cog.outl("    {")
   cog.outl("      value =")
   for n in range(1, int(NTypes) + 1) :
-      cog.outl("        (unsigned int) etl::is_same<T, typename T%s::type>::value ? T%s::ID :" % (n, n))
+      cog.outl("        (unsigned int) etl::is_same<T, typename T%s::type>::value ? (unsigned int)T%s::ID :" % (n, n))
   cog.outl("        (unsigned int) UNKNOWN")
   cog.outl("    };")
   cog.outl("")

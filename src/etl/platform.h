@@ -31,6 +31,21 @@ SOFTWARE.
 #ifndef ETL_PLATFORM_INCLUDED
 #define ETL_PLATFORM_INCLUDED
 
+//*************************************
+// Enable all limit macros
+// Note: This macro must be defined before the first include of stdint.h
+#if !defined(__STDC_LIMIT_MACROS)
+  #define __STDC_LIMIT_MACROS
+#endif
+
+//*************************************
+// Enable all constant macros
+// Note: This macro must be defined before the first include of stdint.h
+#if !defined(__STDC_CONSTANT_MACROS)
+  #define __STDC_CONSTANT_MACROS
+#endif
+
+#include <stddef.h>
 #include <stdint.h>
 #include <limits.h>
 
@@ -195,9 +210,17 @@ SOFTWARE.
 //*************************************
 // Indicate if nullptr is used.
 #if ETL_NO_NULLPTR_SUPPORT
-#define ETL_HAS_NULLPTR 0
+  #define ETL_HAS_NULLPTR 0
 #else
-#define ETL_HAS_NULLPTR 1
+  #define ETL_HAS_NULLPTR 1
+#endif
+
+//*************************************
+// Indicate if legacy bitset is used.
+#if defined(ETL_USE_LEGACY_BITSET)
+  #define ETL_USING_LEGACY_BITSET 1
+#else
+  #define ETL_USING_LEGACY_BITSET 0
 #endif
 
 //*************************************
@@ -212,17 +235,20 @@ SOFTWARE.
 // The macros below are dependent on the profile.
 // C++11
 #if ETL_USING_CPP11 && !defined(ETL_FORCE_NO_ADVANCED_CPP)
-  #define ETL_CONSTEXPR constexpr
-  #define ETL_CONSTANT  constexpr
-  #define ETL_DELETE =  delete
-  #define ETL_EXPLICIT  explicit
-  #define ETL_OVERRIDE  override
-  #define ETL_FINAL     final
-  #define ETL_NORETURN  [[noreturn]]
-  #define ETL_MOVE(x)   etl::move(x)
+  #define ETL_CONSTEXPR                   constexpr
+  #define ETL_CONSTANT                    constexpr
+  #define ETL_STATIC_CONSTANT             constexpr
+  #define ETL_DELETE                      = delete
+  #define ETL_EXPLICIT                    explicit
+  #define ETL_OVERRIDE                    override
+  #define ETL_FINAL                       final
+  #define ETL_NORETURN                    [[noreturn]]
+  #define ETL_MOVE(x)                     etl::move(x)
+  #define ETL_ENUM_CLASS(name)            enum class name
+  #define ETL_ENUM_CLASS_TYPE(name, type) enum class name : type
 
   #if ETL_USING_EXCEPTIONS
-    #define ETL_NOEXCEPT noexcept
+    #define ETL_NOEXCEPT                  noexcept
     #define ETL_NOEXCEPT_EXPR(expression) noexcept(expression)
   #else
     #define ETL_NOEXCEPT
@@ -230,7 +256,8 @@ SOFTWARE.
   #endif
 #else
   #define ETL_CONSTEXPR
-  #define ETL_CONSTANT const
+  #define ETL_CONSTANT                    const
+  #define ETL_STATIC_CONSTANT             static const
   #define ETL_DELETE
   #define ETL_EXPLICIT
   #define ETL_OVERRIDE
@@ -239,13 +266,15 @@ SOFTWARE.
   #define ETL_NOEXCEPT
   #define ETL_NOEXCEPT_EXPR(expression)
   #define ETL_MOVE(x) x
+  #define ETL_ENUM_CLASS(name)            enum name
+  #define ETL_ENUM_CLASS_TYPE(name, type) enum name
 #endif
 
 //*************************************
 // C++14
 #if ETL_USING_CPP14 && !defined(ETL_FORCE_NO_ADVANCED_CPP)
-  #define ETL_CONSTEXPR14 constexpr
-  #define ETL_DEPRECATED  [[deprecated]]
+  #define ETL_CONSTEXPR14               constexpr
+  #define ETL_DEPRECATED                [[deprecated]]
   #define ETL_DEPRECATED_REASON(reason) [[deprecated(reason)]]
 #else
   #define ETL_CONSTEXPR14
@@ -274,11 +303,11 @@ SOFTWARE.
 //*************************************
 // C++20
 #if ETL_USING_CPP20 && !defined(ETL_FORCE_NO_ADVANCED_CPP)
-  #define ETL_LIKELY [[likely]]
-  #define ETL_UNLIKELY [[unlikely]]
-  #define ETL_CONSTEXPR20 constexpr
-  #define ETL_CONSTEVAL consteval
-  #define ETL_CONSTINIT constinit
+  #define ETL_LIKELY            [[likely]]
+  #define ETL_UNLIKELY          [[unlikely]]
+  #define ETL_CONSTEXPR20       constexpr
+  #define ETL_CONSTEVAL         consteval
+  #define ETL_CONSTINIT         constinit
   #define ETL_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
   #define ETL_LIKELY
@@ -320,7 +349,7 @@ SOFTWARE.
 //*************************************
 // Determine if the ETL can use std::array
 #if !defined(ETL_HAS_STD_ARRAY)
-  #if ETL_USING_CPP11 && ETL_USING_STL
+  #if ETL_USING_STL && ETL_USING_CPP11
     #define ETL_HAS_STD_ARRAY 1
   #else
     #define ETL_HAS_STD_ARRAY 0
@@ -331,7 +360,8 @@ SOFTWARE.
 // Determine if the ETL should support atomics.
 #if defined(ETL_NO_ATOMICS) || \
     defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0) || \
-    defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0_PLUS)
+    defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0_PLUS) || \
+    defined(__STDC_NO_ATOMICS__)
   #define ETL_HAS_ATOMIC 0
 #else
   #if ((ETL_USING_CPP11 && (ETL_USING_STL || defined(ETL_IN_UNIT_TEST))) || \
@@ -370,12 +400,6 @@ SOFTWARE.
 #endif
 
 //*************************************
-// Set force flag to 0 if not already set.
-#if !defined(ETL_FORCE_CONSTEXPR_ALGORITHMS)
-  #define ETL_FORCE_CONSTEXPR_ALGORITHMS 0
-#endif
-
-//*************************************
 // Check for availability of certain builtins
 #include "profiles/determine_builtin_support.h"
 
@@ -388,7 +412,11 @@ namespace etl
   namespace traits
   {
     // Documentation: https://www.etlcpp.com/etl_traits.html
+    // General
+    static ETL_CONSTANT long cplusplus                        = __cplusplus;
+    static ETL_CONSTANT int  language_standard                = ETL_LANGUAGE_STANDARD;
 
+    // Using...
     static ETL_CONSTANT bool using_stl                        = (ETL_USING_STL == 1);
     static ETL_CONSTANT bool using_stlport                    = (ETL_USING_STLPORT == 1);
     static ETL_CONSTANT bool using_cpp11                      = (ETL_USING_CPP11 == 1);
@@ -396,9 +424,6 @@ namespace etl
     static ETL_CONSTANT bool using_cpp17                      = (ETL_USING_CPP17 == 1);
     static ETL_CONSTANT bool using_cpp20                      = (ETL_USING_CPP20 == 1);
     static ETL_CONSTANT bool using_cpp23                      = (ETL_USING_CPP23 == 1);
-    static ETL_CONSTANT long cplusplus                        = __cplusplus;
-    static ETL_CONSTANT int  language_standard                = ETL_LANGUAGE_STANDARD;
-    static ETL_CONSTANT bool using_exceptions                 = (ETL_USING_EXCEPTIONS == 1);
     static ETL_CONSTANT bool using_gcc_compiler               = (ETL_USING_GCC_COMPILER == 1);
     static ETL_CONSTANT bool using_microsoft_compiler         = (ETL_USING_MICROSOFT_COMPILER == 1);
     static ETL_CONSTANT bool using_arm5_compiler              = (ETL_USING_ARM5_COMPILER == 1);
@@ -410,6 +435,10 @@ namespace etl
     static ETL_CONSTANT bool using_intel_compiler             = (ETL_USING_INTEL_COMPILER == 1);
     static ETL_CONSTANT bool using_texas_instruments_compiler = (ETL_USING_TEXAS_INSTRUMENTS_COMPILER == 1);
     static ETL_CONSTANT bool using_generic_compiler           = (ETL_USING_GENERIC_COMPILER == 1);
+    static ETL_CONSTANT bool using_legacy_bitset              = (ETL_USING_LEGACY_BITSET == 1);
+    static ETL_CONSTANT bool using_exceptions                 = (ETL_USING_EXCEPTIONS == 1);
+    
+    // Has...
     static ETL_CONSTANT bool has_initializer_list             = (ETL_HAS_INITIALIZER_LIST == 1);
     static ETL_CONSTANT bool has_8bit_types                   = (ETL_USING_8BIT_TYPES == 1);
     static ETL_CONSTANT bool has_64bit_types                  = (ETL_USING_64BIT_TYPES == 1);
@@ -426,7 +455,10 @@ namespace etl
     static ETL_CONSTANT bool has_ivector_repair               = (ETL_HAS_IVECTOR_REPAIR == 1);
     static ETL_CONSTANT bool has_mutable_array_view           = (ETL_HAS_MUTABLE_ARRAY_VIEW == 1);
     static ETL_CONSTANT bool has_ideque_repair                = (ETL_HAS_IDEQUE_REPAIR == 1);
+
+    // Is...
     static ETL_CONSTANT bool is_debug_build                   = (ETL_IS_DEBUG_BUILD == 1);
+   
   }
 }
 

@@ -41,6 +41,8 @@ SOFTWARE.
 #include <ctype.h>
 #include <stdint.h>
 
+#include "private/minmax_push.h"
+
 namespace etl
 {
   //***************************************************************************
@@ -832,5 +834,7 @@ namespace etl
     etl::transform(itr, s.end(), itr, ::tolower);
   }
 }
+
+#include "private/minmax_pop.h"
 
 #endif

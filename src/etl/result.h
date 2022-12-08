@@ -93,16 +93,16 @@ namespace etl
     //*******************************************
     /// Construct from error
     //*******************************************
-    result(const TError& err)
-      : data(err)
+    result(const TError& error)
+      : data(error)
     {
     }
 
     //*******************************************
     /// Move construct from error
     //*******************************************
-    result(TError&& err)
-      : data(etl::move(err))
+    result(TError&& error)
+      : data(etl::move(error))
     {
     }
 
@@ -145,19 +145,27 @@ namespace etl
     //*******************************************
     /// Copy assign from error
     //*******************************************
-    result& operator =(const TError& err)
+    result& operator =(const TError& error)
     {
-      data = err;
+      data = error;
       return *this;
     }
 
     //*******************************************
     /// Move assign from error
     //*******************************************
-    result& operator =(TError&& err)
+    result& operator =(TError&& error)
     {
-      data = etl::move(err);
+      data = etl::move(error);
       return *this;
+    }
+
+    //*******************************************
+    /// <b>true</b> if result contains a value
+    //*******************************************
+    bool has_value() const
+    {
+      return (data.index() == 0U);
     }
 
     //*******************************************
@@ -227,15 +235,18 @@ namespace etl
   public:
 
     //*******************************************
-    /// Cannot be default constructed
+    /// Default Constructor
     //*******************************************
-    result() = delete;
+    result()
+      : err(TError())
+    {
+    }
 
     //*******************************************
     /// Copy constructor
     //*******************************************
     result(const result& other)
-      : data(other.data)
+      : err(other.err)
     {
     }
 
@@ -243,41 +254,41 @@ namespace etl
     /// Move constructor
     //*******************************************
     result(result&& other)
-      : data(etl::move(other.data))
+      : err(etl::move(other.err))
     {
     }
 
     //*******************************************
     /// Construct from error
     //*******************************************
-    result(const TError& err)
-      : data(err)
+    result(const TError& err_)
+      : err(err_)
     {
     }
 
     //*******************************************
     /// Move construct from error
     //*******************************************
-    result(TError&& err)
-      : data(etl::move(err))
+    result(TError&& err_)
+      : err(etl::move(err_))
     {
     }
 
     //*******************************************
     /// Copy assign from error
     //*******************************************
-    result& operator =(const TError& err)
+    result& operator =(const TError& err_)
     {
-      data = err;
+      err = err_;
       return *this;
     }
 
     //*******************************************
     /// Move assign from error
     //*******************************************
-    result& operator =(TError&& err)
+    result& operator =(TError&& err_)
     {
-      data = etl::move(err);
+      err = etl::move(err_);
       return *this;
     }
 
@@ -303,7 +314,7 @@ namespace etl
     //*******************************************
     const TError& error() const
     {
-      return etl::get<TError>(data);
+      return err;
     }
 
     //*******************************************
@@ -312,12 +323,12 @@ namespace etl
     //*******************************************
     TError&& error()
     {
-      return etl::get<TError>(etl::move(data));
+      return etl::move(err);
     }
 
   private:
 
-    etl::variant<etl::monostate, TError> data;
+    TError err;
   };
 }
 

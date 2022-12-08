@@ -28,8 +28,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include <stdint.h>
-
 #include "../platform.h"
 #include "../utility.h"
 #include "../array.h"
@@ -43,6 +41,8 @@ SOFTWARE.
 #include "../null_type.h"
 #include "../placement_new.h"
 
+#include <stdint.h>
+
 #if defined(ETL_COMPILER_KEIL)
   #pragma diag_suppress 940
   #pragma diag_suppress 111
@@ -55,7 +55,7 @@ SOFTWARE.
 //*****************************************************************************
 namespace etl
 {
-#if !defined(ETL_USE_LEGACY_VARIANT)
+#if ETL_USING_CPP11 && !defined(ETL_USE_LEGACY_VARIANT)
   namespace legacy
   {
 #endif
@@ -452,11 +452,12 @@ namespace etl
       /// Default constructor.
       /// Sets the state of the instance to containing no valid data.
       //***************************************************************************
+#include "etl/private/diagnostic_uninitialized_push.h"
       variant()
-        : data()
-        , type_id(UNSUPPORTED_TYPE_ID)
+        : type_id(UNSUPPORTED_TYPE_ID)
       {
       }
+#include "etl/private/diagnostic_pop.h"
 
       //***************************************************************************
       /// Constructor that catches any types that are not supported.
@@ -978,7 +979,7 @@ namespace etl
 
 #undef ETL_GEN_LEGACY_VISIT
 
-#if !defined(ETL_USE_LEGACY_VARIANT)
+#if ETL_USING_CPP11 && !defined(ETL_USE_LEGACY_VARIANT)
   }
 #endif
 }

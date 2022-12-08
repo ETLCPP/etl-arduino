@@ -65,12 +65,12 @@ cog.outl("//********************************************************************
 #ifndef ETL_TYPE_TRAITS_INCLUDED
 #define ETL_TYPE_TRAITS_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "nullptr.h"
 #include "static_assert.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 ///\defgroup type_traits type_traits
 /// A set of type traits definitions.
@@ -1601,7 +1601,7 @@ namespace etl
 #endif
 
   //***************************************************************************
-#if ETL_USING_CPP11 && ETL_USING_STL && !defined(ETL_USE_TYPE_TRAITS_BUILTINS) && !defined(ETL_USER_DEFINED_TYPE_TRAITS) && ((!defined(ARDUINO) && ETL_NOT_USING_STLPORT) || defined(ETL_GCC_V5_TYPE_TRAITS_SUPPORTED))
+#if ETL_USING_STL && ETL_USING_CPP11 && !defined(ETL_USE_TYPE_TRAITS_BUILTINS) && !defined(ETL_USER_DEFINED_TYPE_TRAITS) && ((!defined(ARDUINO) && ETL_NOT_USING_STLPORT) || defined(ETL_GCC_V5_TYPE_TRAITS_SUPPORTED))
 
   //*********************************************
   // Use the STL's definitions.

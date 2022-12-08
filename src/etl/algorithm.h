@@ -38,14 +38,14 @@ SOFTWARE.
 /// Additional new variants of certain algorithms.
 ///\ingroup utilities
 
-#include <stdint.h>
-#include <string.h>
-
 #include "platform.h"
 #include "type_traits.h"
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
+
+#include <stdint.h>
+#include <string.h>
 
 #include "private/minmax_push.h"
 
@@ -183,13 +183,6 @@ namespace etl
   {
     return std::copy_n(sb, count, db);
   }
-#elif ETL_USING_STL && ETL_USING_CPP11 && !ETL_FORCE_CONSTEXPR_ALGORITHMS
-  // Use the STL implementation
-  template <typename TIterator1, typename TSize, typename TIterator2>
-  TIterator2 copy_n(TIterator1 sb, TSize count, TIterator2 db)
-  {
-    return std::copy_n(sb, count, db);
-  }
 #else
   // Non-pointer or not trivially copyable or not using builtin memcpy.
   template <typename TIterator1, typename TSize, typename TIterator2>
@@ -236,12 +229,6 @@ namespace etl
   {
     return std::move(sb, se, db);
   }
-#elif ETL_USING_STL && ETL_USING_CPP11 && !ETL_FORCE_CONSTEXPR_ALGORITHMS
-  template <typename TIterator1, typename TIterator2>
-  TIterator2 move(TIterator1 sb, TIterator1 se, TIterator2 db)
-  {
-    return std::move(sb, se, db);
-  }
 #else
   // non-pointer or not trivially copyable
   template <typename TIterator1, typename TIterator2>
@@ -264,12 +251,6 @@ namespace etl
   template <typename TIterator1, typename TIterator2>
   ETL_CONSTEXPR20
     TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
-  {
-    return std::move_backward(sb, se, de);
-  }
-#elif ETL_USING_STL && ETL_USING_CPP11 && !ETL_FORCE_CONSTEXPR_ALGORITHMS
-  template <typename TIterator1, typename TIterator2>
-  TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
   {
     return std::move_backward(sb, se, de);
   }
@@ -422,6 +403,27 @@ namespace etl
 
     return ETL_OR_STD::make_pair(etl::lower_bound(first, last, value, compare()),
                                  etl::upper_bound(first, last, value, compare()));
+  }
+
+  //***************************************************************************
+  // binary_search
+  //***************************************************************************
+  template <typename TIterator, typename T, typename Compare>
+  ETL_NODISCARD
+  bool binary_search(TIterator first, TIterator last, const T& value, Compare compare)
+  {
+    first = etl::lower_bound(first, last, value, compare);
+
+    return (!(first == last) && !(compare(value, *first)));
+  }
+
+  template <typename TIterator, typename T>
+  ETL_NODISCARD
+  bool binary_search(TIterator first, TIterator last, const T& value)
+  {
+    typedef etl::less<typename etl::iterator_traits<TIterator>::value_type> compare;
+
+    return binary_search(first, last, value, compare());
   }
 
   //***************************************************************************

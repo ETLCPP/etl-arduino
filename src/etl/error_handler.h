@@ -36,12 +36,12 @@ SOFTWARE.
 /// Error handler for when throwing exceptions is not required.
 ///\ingroup utilities
 
-#include <assert.h>
-
 #include "platform.h"
 #include "exception.h"
 #include "function.h"
 #include "nullptr.h"
+
+#include <assert.h>
 
 #if defined(ETL_LOG_ERRORS) || defined(ETL_IN_UNIT_TEST)
 namespace etl
@@ -325,9 +325,11 @@ namespace etl
 #endif
 
 #if defined(ETL_VERBOSE_ERRORS)
-  #define ETL_ERROR(e) (e(__FILE__, __LINE__)) // Make an exception with the file name and line number.
+  #define ETL_ERROR(e) (e(__FILE__, __LINE__))                    // Make an exception with the file name and line number.
+  #define ETL_ERROR_WITH_VALUE(e, v) (e(__FILE__, __LINE__, (v))) // Make an exception with the file name, line number and value.
 #else
-  #define ETL_ERROR(e) (e("", __LINE__))       // Make an exception with the line number.
+  #define ETL_ERROR(e) (e("", __LINE__))                    // Make an exception with the line number.
+  #define ETL_ERROR_WITH_VALUE(e, v) (e("", __LINE__, (v))) // Make an exception with the file name, line number and value.
 #endif
 
 #if defined(ETL_VERBOSE_ERRORS)

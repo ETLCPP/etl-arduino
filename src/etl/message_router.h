@@ -51,8 +51,6 @@ SOFTWARE.
 #ifndef ETL_MESSAGE_ROUTER_INCLUDED
 #define ETL_MESSAGE_ROUTER_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "message.h"
 #include "shared_message.h"
@@ -66,6 +64,8 @@ SOFTWARE.
 #include "placement_new.h"
 #include "successor.h"
 #include "type_traits.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -157,6 +157,8 @@ namespace etl
       NULL_MESSAGE_ROUTER = 255,
       MESSAGE_BUS         = 254,
       ALL_MESSAGE_ROUTERS = 253,
+      MESSAGE_BROKER      = 252,
+      MESSAGE_ROUTER      = 251,
       MAX_MESSAGE_ROUTER  = 249
     };
 
@@ -189,11 +191,18 @@ namespace etl
   {
   public:
 
+    //********************************************
     null_message_router()
       : imessage_router(imessage_router::NULL_MESSAGE_ROUTER)
     {
     }
 
+    //********************************************
+    null_message_router(etl::imessage_router& successor)
+      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor)
+    {
+    }
+    
     //********************************************
     using etl::imessage_router::receive;
 
@@ -260,9 +269,30 @@ namespace etl
   {
   public:
 
+    //********************************************
+    message_producer()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //********************************************
+    message_producer(etl::imessage_router& successor)
+      : imessage_router(imessage_router::NULL_MESSAGE_ROUTER, successor)
+    {
+    }
+
+    //********************************************
     message_producer(etl::message_router_id_t id_)
       : imessage_router(id_)
     {
+      ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //********************************************
+    message_producer(etl::message_router_id_t id_, etl::imessage_router& successor)
+      : imessage_router(id_, successor)
+    {
+      ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
     }
 
     //********************************************
@@ -328,6 +358,26 @@ namespace etl
     destination.receive(message);
   }
 
+  //***************************************************************************
+  /// Send a message to a router with a particular id.
+  //***************************************************************************
+  static inline void send_message(etl::imessage_router& destination,
+                                  etl::message_router_id_t id,
+                                  const etl::imessage& message)
+  {
+    destination.receive(id, message);
+  }
+
+  //***************************************************************************
+  /// Send a shared message to a router with a particular id.
+  //***************************************************************************
+  static inline void send_message(etl::imessage_router& destination,
+                                  etl::message_router_id_t id,
+                                  etl::shared_message message)
+  {
+    destination.receive(id, message);
+  }
+
 //*************************************************************************************************
 // For C++17 and above.
 //*************************************************************************************************
@@ -341,6 +391,18 @@ namespace etl
   public:
 
     typedef etl::message_packet<TMessageTypes...> message_packet;
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
 
     //**********************************************
     message_router(etl::message_router_id_t id_)
@@ -493,6 +555,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -625,6 +699,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -762,6 +848,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -892,6 +990,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -1026,6 +1136,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -1152,6 +1274,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -1283,6 +1417,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -1407,6 +1553,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -1535,6 +1693,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -1655,6 +1825,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -1779,6 +1961,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -1896,6 +2090,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -2017,6 +2223,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -2130,6 +2348,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************
@@ -2248,6 +2478,18 @@ namespace etl
     }
 
     //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
+    }
+
+    //**********************************************
     using etl::imessage_router::receive;
 
     void receive(const etl::imessage& msg) ETL_OVERRIDE
@@ -2359,6 +2601,18 @@ namespace etl
       : imessage_router(id_, successor_)
     {
       ETL_ASSERT(id_ <= etl::imessage_router::MAX_MESSAGE_ROUTER, ETL_ERROR(etl::message_router_illegal_id));
+    }
+
+    //**********************************************
+    message_router()
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER)
+    {
+    }
+
+    //**********************************************
+    message_router(etl::imessage_router& successor_)
+      : imessage_router(etl::imessage_router::MESSAGE_ROUTER, successor_)
+    {
     }
 
     //**********************************************

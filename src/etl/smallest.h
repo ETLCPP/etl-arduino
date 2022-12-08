@@ -53,10 +53,10 @@ SOFTWARE.
 #ifndef ETL_SMALLEST_INCLUDED
 #define ETL_SMALLEST_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "integral_limits.h"
+
+#include <stdint.h>
 
 ///\defgroup smallest smallest
 ///\ingroup utilities
@@ -226,6 +226,7 @@ namespace etl
       typedef uint_least32_t type;
     };
 
+#if ETL_USING_64BIT_TYPES
     //*************************************************************************
     // Greater than 32 bits.
     //*************************************************************************
@@ -234,6 +235,7 @@ namespace etl
     {
       typedef uint_least64_t type;
     };
+#endif
 
     //*************************************************************************
     // Determine the type to hold the number of bits based on the index.
@@ -268,6 +270,7 @@ namespace etl
       typedef int_least32_t type;
     };
 
+#if ETL_USING_64BIT_TYPES
     //*************************************************************************
     // Greater than 32 bits.
     //*************************************************************************
@@ -276,6 +279,7 @@ namespace etl
     {
       typedef int_least64_t type;
     };
+#endif
   }
 
   //***************************************************************************

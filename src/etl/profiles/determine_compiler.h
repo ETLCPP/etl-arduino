@@ -31,6 +31,9 @@ SOFTWARE.
 #ifndef ETL_DETERMINE_COMPILER_H_INCLUDED
 #define ETL_DETERMINE_COMPILER_H_INCLUDED
 
+//*****************************************************************************
+// Macros that are conditionally defined.
+//*****************************************************************************
 #if !defined(ETL_COMPILER_GCC) && \
     !defined(ETL_COMPILER_MICROSOFT) && \
     !defined(ETL_COMPILER_ARM5) && \
@@ -121,6 +124,9 @@ SOFTWARE.
   #endif
 #endif
 
+//*****************************************************************************
+// 'Using' macros that are always defined.
+//*****************************************************************************
 #if defined(ETL_COMPILER_GCC)
   #define ETL_USING_GCC_COMPILER 1
 #else

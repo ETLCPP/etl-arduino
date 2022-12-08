@@ -33,10 +33,6 @@ SOFTWARE.
 
 #define ETL_IN_VECTOR_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stddef.h>
-
 #include "platform.h"
 #include "algorithm.h"
 #include "type_traits.h"
@@ -53,6 +49,10 @@ SOFTWARE.
 #include "placement_new.h"
 #include "algorithm.h"
 #include "initializer_list.h"
+
+#include <stddef.h>
+#include <stdint.h>
+#include <stddef.h>
 
 //*****************************************************************************
 ///\defgroup vector vector
@@ -1311,6 +1311,9 @@ namespace etl
     //*************************************************************************
     /// Destructor.
     //*************************************************************************
+#ifdef ETL_IVECTOR_REPAIR_ENABLE
+    virtual
+#endif
     ~vector()
     {
       this->clear();
@@ -1723,13 +1726,18 @@ namespace etl
 #endif
 
     //*************************************************************************
-    /// Copy constructor.
+    /// Construct a copy.
     //*************************************************************************
     vector_ext(const vector_ext& other, void* buffer, size_t max_size)
       : etl::ivector<T*>(reinterpret_cast<T**>(buffer), max_size)
     {
       (void)etl::ivector<T*>::operator = (other);
     }
+
+    //*************************************************************************
+    /// Copy constructor (Deleted)
+    //*************************************************************************
+    vector_ext(const vector_ext& other) ETL_DELETE;
 
     //*************************************************************************
     /// Assignment operator.
@@ -1750,6 +1758,11 @@ namespace etl
     {
       (void)etl::ivector<T*>::operator = (etl::move(other));
     }
+
+    //*************************************************************************
+    /// Move constructor (Deleted)
+    //*************************************************************************
+    vector_ext(vector_ext&& other) ETL_DELETE;
 
     //*************************************************************************
     /// Move assignment operator.
