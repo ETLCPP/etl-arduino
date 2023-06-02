@@ -42,6 +42,7 @@ SOFTWARE.
 #include "static_assert.h"
 #include "iterator.h"
 #include "type_traits.h"
+#include "optional.h"
 
 #include "private/comparator_is_transparent.h"
 
@@ -458,34 +459,6 @@ namespace etl
     const_reverse_iterator crend() const
     {
       return const_reverse_iterator(lookup.crend());
-    }
-
-    //*********************************************************************
-    /// Returns a reference to the value at index 'key'
-    ///\param i The index.
-    ///\return A reference to the value at index 'key'
-    //*********************************************************************
-    mapped_type& operator [](key_parameter_t key)
-    {
-      iterator i_element = lower_bound(key);
-
-      ETL_ASSERT((i_element != end()) && keys_are_equal(i_element->first, key), ETL_ERROR(flat_map_out_of_bounds));
-
-      return i_element->second;
-    }
-
-    //*********************************************************************
-    /// Returns a const reference to the value at index 'key'
-    ///\param i The index.
-    ///\return A const reference to the value at index 'key'
-    //*********************************************************************
-    const mapped_type& operator [](key_parameter_t key) const
-    {
-      iterator i_element = lower_bound(key);
-
-      ETL_ASSERT((i_element != end()) && keys_are_equal(i_element->first, key), ETL_ERROR(flat_map_out_of_bounds));
-
-      return i_element->second;
     }
 
     //*********************************************************************
@@ -1174,6 +1147,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t reference_flat_map< TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

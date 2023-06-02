@@ -37,7 +37,6 @@ SOFTWARE.
 #include "exception.h"
 #include "hash.h"
 #include "parameter_type.h"
-
 #include "algorithm.h"
 
 ///\defgroup array array
@@ -394,8 +393,10 @@ namespace etl
   {
     size_t operator()(const etl::array_wrapper<T, SIZE, ARRAY>& aw) const
     {
-      return etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&aw[0]),
-                                                         reinterpret_cast<const uint8_t*>(&aw[aw.size()]));
+      const uint8_t* pb = reinterpret_cast<const uint8_t*>(aw.data());
+      const uint8_t* pe = pb + (SIZE * sizeof(T));
+
+      return etl::private_hash::generic_hash<size_t>(pb, pe);
     }
   };
 #endif

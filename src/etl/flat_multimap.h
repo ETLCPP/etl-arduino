@@ -84,16 +84,17 @@ namespace etl
     typedef const value_type* const_pointer;
     typedef size_t            size_type;
 
+    typedef const key_type&   const_key_reference;
+#if ETL_USING_CPP11
+    typedef key_type&&        rvalue_key_reference;
+#endif
+
     typedef typename refmap_t::iterator       iterator;
     typedef typename refmap_t::const_iterator const_iterator;
 
     typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
     typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
     typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
-
-  protected:
-
-    typedef const key_type& key_parameter_t;
 
   private:
 
@@ -206,7 +207,7 @@ namespace etl
     //*********************************************************************
     const_reverse_iterator rend() const
     {
-      refmap_t::rend();
+      return refmap_t::rend();
     }
 
     //*********************************************************************
@@ -347,14 +348,14 @@ namespace etl
     //*************************************************************************
     /// Emplaces a value to the map.
     //*************************************************************************
-    ETL_OR_STD::pair<iterator, bool> emplace(const key_type& key, const mapped_type& value)
+    ETL_OR_STD::pair<iterator, bool> emplace(const key_type& key, const mapped_type& mapped)
     {
       ETL_ASSERT(!full(), ETL_ERROR(flat_multimap_full));
 
       // Create it.
       value_type* pvalue = storage.allocate<value_type>();
       ::new ((void*)etl::addressof(pvalue->first)) key_type(key);
-      ::new ((void*)etl::addressof(pvalue->second)) mapped_type(value);
+      ::new ((void*)etl::addressof(pvalue->second)) mapped_type(mapped);
       iterator i_element = upper_bound(key);
       ETL_INCREMENT_DEBUG_COUNT
 
@@ -460,7 +461,7 @@ namespace etl
     ///\param key The key to erase.
     ///\return The number of elements erased. 0 or 1.
     //*********************************************************************
-    size_t erase(key_parameter_t key)
+    size_t erase(const_key_reference key)
     {
       ETL_OR_STD::pair<iterator, iterator> range = equal_range(key);
 
@@ -572,7 +573,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pointing to the element or end() if not found.
     //*********************************************************************
-    iterator find(key_parameter_t key)
+    iterator find(const_key_reference key)
     {
       return refmap_t::find(key);
     }
@@ -591,7 +592,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pointing to the element or end() if not found.
     //*********************************************************************
-    const_iterator find(key_parameter_t key) const
+    const_iterator find(const_key_reference key) const
     {
       return refmap_t::find(key);
     }
@@ -610,7 +611,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return 1 if the key exists, otherwise 0.
     //*********************************************************************
-    size_t count(key_parameter_t key) const
+    size_t count(const_key_reference key) const
     {
       return refmap_t::count(key);
     }
@@ -629,7 +630,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator.
     //*********************************************************************
-    iterator lower_bound(key_parameter_t key)
+    iterator lower_bound(const_key_reference key)
     {
       return refmap_t::lower_bound(key);
     }
@@ -648,7 +649,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator.
     //*********************************************************************
-    const_iterator lower_bound(key_parameter_t key) const
+    const_iterator lower_bound(const_key_reference key) const
     {
       return refmap_t::lower_bound(key);
     }
@@ -667,7 +668,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator.
     //*********************************************************************
-    iterator upper_bound(key_parameter_t key)
+    iterator upper_bound(const_key_reference key)
     {
       return refmap_t::upper_bound(key);
     }
@@ -686,7 +687,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator.
     //*********************************************************************
-    const_iterator upper_bound(key_parameter_t key) const
+    const_iterator upper_bound(const_key_reference key) const
     {
       return refmap_t::upper_bound(key);
     }
@@ -705,7 +706,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pair.
     //*********************************************************************
-    ETL_OR_STD::pair<iterator, iterator> equal_range(key_parameter_t key)
+    ETL_OR_STD::pair<iterator, iterator> equal_range(const_key_reference key)
     {
       return refmap_t::equal_range(key);
     }
@@ -724,7 +725,7 @@ namespace etl
     ///\param key The key to search for.
     ///\return An iterator pair.
     //*********************************************************************
-    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(key_parameter_t key) const
+    ETL_OR_STD::pair<const_iterator, const_iterator> equal_range(const_key_reference key) const
     {
       return refmap_t::equal_range(key);
     }
@@ -741,7 +742,7 @@ namespace etl
     //*************************************************************************
     /// Check if the map contains the key.
     //*************************************************************************
-    bool contains(key_parameter_t key) const
+    bool contains(const_key_reference key) const
     {
       return find(key) != end();
     }
@@ -1040,6 +1041,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t flat_multimap<TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

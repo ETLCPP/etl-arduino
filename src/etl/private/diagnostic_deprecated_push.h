@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 John Wellbelove
+Copyright(c) 2023 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -28,47 +28,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_SQRT_INCLUDED
-#define ETL_SQRT_INCLUDED
+/*
+ * The header include guard has been intentionally omitted.
+ * This file is intended to evaluated multiple times by design.
+ */
 
-#include "platform.h"
-#include "type_traits.h"
-#include "constant.h"
-
-#include <stddef.h>
-
-namespace etl 
-{
-  //***************************************************************************
-  /// Calculates the smallest value that, when squared, will be not greater than VALUE.
-  //***************************************************************************
-  template <size_t VALUE, size_t I = 1>
-  struct sqrt
-  {
-    typedef typename etl::conditional<((I * I) > VALUE), 
-                                      etl::constant<intmax_t, I - 1>,
-                                      etl::sqrt<VALUE, I + 1> >::type type;
-
-#if ETL_USING_CPP11
-    static constexpr size_t value = type::value;
-#else
-    enum
-    {
-      // Recursive definition.
-      value = type::value
-    };
-#endif
-  };
-
-#if ETL_USING_CPP11
-  template <size_t VALUE, size_t I>
-  constexpr size_t sqrt<VALUE, I>::value;
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__llvm__)
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #endif
 
-#if ETL_USING_CPP17
-  template <size_t VALUE, size_t I = 1>
-  inline constexpr size_t sqrt_v = sqrt<VALUE, I>::value;
-#endif
-}
-
+#if defined(__clang__) || defined(__llvm__)
+#pragma clang diagnostic push 
+#pragma clang diagnostic ignored "-Wdeprecated"
 #endif

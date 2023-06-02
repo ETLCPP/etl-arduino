@@ -67,7 +67,7 @@ namespace etl
   {
     //***************************************************************************
     // This is a copy of the normal etl::parameter_pack, but without the static_assert
-    // so that the C++11 versions of do_accept() & do_operator() do not throw a compile time error.
+    // so that the C++11 versions of do_visitor() & do_operator() do not throw a compile time error.
     //***************************************************************************
     template <typename... TTypes>
     class parameter_pack
@@ -536,7 +536,7 @@ namespace etl
 #include "etl/private/diagnostic_pop.h"
 
     //***************************************************************************
-    /// Constructor from a value.
+    /// Construct from a value.
     //***************************************************************************
 #include "etl/private/diagnostic_uninitialized_push.h"
     template <typename T, etl::enable_if_t<!etl::is_same<etl::remove_cvref_t<T>, variant>::value, int> = 0>
@@ -825,12 +825,24 @@ namespace etl
     //***************************************************************************
     /// Accept an etl::visitor.
     //***************************************************************************
-    void accept_visitor(etl::visitor<TTypes...>& v)
+    void accept(etl::visitor<TTypes...>& v)
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
-      do_accept(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+      do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
 #else
-      do_accept(v);
+      do_visitor(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept an etl::visitor.
+    //***************************************************************************
+    void accept(etl::visitor<TTypes...>& v) const
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_visitor(v);
 #endif
     }
 
@@ -838,7 +850,90 @@ namespace etl
     /// Accept a generic functor.
     //***************************************************************************
     template <typename TVisitor>
+    etl::enable_if_t<!etl::is_base_of<etl::visitor<TTypes...>, TVisitor>::value, void>
+      accept(TVisitor& v)
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_operator(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_operator(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept a generic functor.
+    //***************************************************************************
+    template <typename TVisitor>
+    etl::enable_if_t<!etl::is_base_of<etl::visitor<TTypes...>, TVisitor>::value, void>
+      accept(TVisitor& v) const
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_operator(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_operator(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept an etl::visitor.
+    /// Deprecated.
+    //***************************************************************************
+    template <typename TVisitor>
+#if !defined(ETL_IN_UNIT_TEST)
+    ETL_DEPRECATED_REASON("Replace with accept()")
+#endif
+    void accept_visitor(TVisitor& v)
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_visitor(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept an etl::visitor.
+    /// Deprecated.
+    //***************************************************************************
+    template <typename TVisitor>
+#if !defined(ETL_IN_UNIT_TEST)
+    ETL_DEPRECATED_REASON("Replace with accept()")
+#endif
+    void accept_visitor(TVisitor& v) const
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_visitor(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept a generic functor.
+    /// Deprecated.
+    //***************************************************************************
+    template <typename TVisitor>
+#if !defined(ETL_IN_UNIT_TEST)
+    ETL_DEPRECATED_REASON("Replace with accept()")
+#endif
     void accept_functor(TVisitor& v)
+    {
+#if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
+      do_operator(v, etl::make_index_sequence<sizeof...(TTypes)>{});
+#else
+      do_operator(v);
+#endif
+    }
+
+    //***************************************************************************
+    /// Accept a generic functor.
+    /// Deprecated.
+    //***************************************************************************
+    template <typename TVisitor>
+#if !defined(ETL_IN_UNIT_TEST)
+    ETL_DEPRECATED_REASON("Replace with accept()")
+#endif
+    void accept_functor(TVisitor& v) const
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
       do_operator(v, etl::make_index_sequence<sizeof...(TTypes)>{});
@@ -900,8 +995,17 @@ namespace etl
     //***************************************************************************
     /// Call the relevent visitor by attempting each one.
     //***************************************************************************
-    template <size_t... I>
-    void do_accept(etl::visitor<TTypes...>& visitor, etl::index_sequence<I...>)
+    template <typename TVisitor, size_t... I>
+    void do_visitor(TVisitor& visitor, etl::index_sequence<I...>)
+    {
+      (attempt_visitor<I>(visitor) || ...);
+    }
+
+    //***************************************************************************
+    /// Call the relevent visitor by attempting each one.
+    //***************************************************************************
+    template <typename TVisitor, size_t... I>
+    void do_visitor(TVisitor& visitor, etl::index_sequence<I...>) const
     {
       (attempt_visitor<I>(visitor) || ...);
     }
@@ -909,45 +1013,96 @@ namespace etl
     //***************************************************************************
     /// /// Call the relevent visitor.
     //***************************************************************************
-    void do_accept(etl::visitor<TTypes...>& visitor)
+    template <typename TVisitor>
+    void do_visitor(TVisitor& visitor)
     {
       switch (index())
       {
-        case 0: visitor.visit(etl::get<0>(*this)); break;
-        case 1: visitor.visit(etl::get<1>(*this)); break;
-        case 2: visitor.visit(etl::get<2>(*this)); break;
-        case 3: visitor.visit(etl::get<3>(*this)); break;
-        case 4: visitor.visit(etl::get<4>(*this)); break;
-        case 5: visitor.visit(etl::get<5>(*this)); break;
-        case 6: visitor.visit(etl::get<6>(*this)); break;
-        case 7: visitor.visit(etl::get<7>(*this)); break;
+        case 0: { auto arg = etl::get<0>(*this); visitor.visit(arg); break; }
+        case 1: { auto arg = etl::get<1>(*this); visitor.visit(arg); break; }
+        case 2: { auto arg = etl::get<2>(*this); visitor.visit(arg); break; }
+        case 3: { auto arg = etl::get<3>(*this); visitor.visit(arg); break; }
+        case 4: { auto arg = etl::get<4>(*this); visitor.visit(arg); break; }
+        case 5: { auto arg = etl::get<5>(*this); visitor.visit(arg); break; }
+        case 6: { auto arg = etl::get<6>(*this); visitor.visit(arg); break; }
+        case 7: { auto arg = etl::get<7>(*this); visitor.visit(arg); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
-        case 8: visitor.visit(etl::get<8>(*this)); break;
-        case 9: visitor.visit(etl::get<9>(*this)); break;
-        case 10: visitor.visit(etl::get<10>(*this)); break;
-        case 11: visitor.visit(etl::get<11>(*this)); break;
-        case 12: visitor.visit(etl::get<12>(*this)); break;
-        case 13: visitor.visit(etl::get<13>(*this)); break;
-        case 14: visitor.visit(etl::get<14>(*this)); break;
-        case 15: visitor.visit(etl::get<15>(*this)); break;
+        case 8: { auto arg = etl::get<8>(*this); visitor.visit(arg); break; }
+        case 9: { auto arg = etl::get<9>(*this); visitor.visit(arg); break; }
+        case 10: { auto arg = etl::get<10>(*this); visitor.visit(arg); break; }
+        case 11: { auto arg = etl::get<11>(*this); visitor.visit(arg); break; }
+        case 12: { auto arg = etl::get<12>(*this); visitor.visit(arg); break; }
+        case 13: { auto arg = etl::get<13>(*this); visitor.visit(arg); break; }
+        case 14: { auto arg = etl::get<14>(*this); visitor.visit(arg); break; }
+        case 15: { auto arg = etl::get<15>(*this); visitor.visit(arg); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
-        case 16: visitor.visit(etl::get<16>(*this)); break;
-        case 17: visitor.visit(etl::get<17>(*this)); break;
-        case 18: visitor.visit(etl::get<18>(*this)); break;
-        case 19: visitor.visit(etl::get<19>(*this)); break;
-        case 20: visitor.visit(etl::get<20>(*this)); break;
-        case 21: visitor.visit(etl::get<21>(*this)); break;
-        case 22: visitor.visit(etl::get<22>(*this)); break;
-        case 23: visitor.visit(etl::get<23>(*this)); break;
+        case 16: { auto arg = etl::get<16>(*this); visitor.visit(arg); break; }
+        case 17: { auto arg = etl::get<17>(*this); visitor.visit(arg); break; }
+        case 18: { auto arg = etl::get<18>(*this); visitor.visit(arg); break; }
+        case 19: { auto arg = etl::get<19>(*this); visitor.visit(arg); break; }
+        case 20: { auto arg = etl::get<20>(*this); visitor.visit(arg); break; }
+        case 21: { auto arg = etl::get<21>(*this); visitor.visit(arg); break; }
+        case 22: { auto arg = etl::get<22>(*this); visitor.visit(arg); break; }
+        case 23: { auto arg = etl::get<23>(*this); visitor.visit(arg); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
-        case 24: visitor.visit(etl::get<24>(*this)); break;
-        case 25: visitor.visit(etl::get<25>(*this)); break;
-        case 26: visitor.visit(etl::get<26>(*this)); break;
-        case 27: visitor.visit(etl::get<27>(*this)); break;
-        case 28: visitor.visit(etl::get<28>(*this)); break;
-        case 29: visitor.visit(etl::get<29>(*this)); break;
-        case 30: visitor.visit(etl::get<30>(*this)); break;
-        case 31: visitor.visit(etl::get<31>(*this)); break;
+        case 24: { auto arg = etl::get<24>(*this); visitor.visit(arg); break; }
+        case 25: { auto arg = etl::get<25>(*this); visitor.visit(arg); break; }
+        case 26: { auto arg = etl::get<26>(*this); visitor.visit(arg); break; }
+        case 27: { auto arg = etl::get<27>(*this); visitor.visit(arg); break; }
+        case 28: { auto arg = etl::get<28>(*this); visitor.visit(arg); break; }
+        case 29: { auto arg = etl::get<29>(*this); visitor.visit(arg); break; }
+        case 30: { auto arg = etl::get<30>(*this); visitor.visit(arg); break; }
+        case 31: { auto arg = etl::get<31>(*this); visitor.visit(arg); break; }
+#endif
+#endif
+#endif
+        default: break;
+      }
+    }
+
+    //***************************************************************************
+    /// /// Call the relevent visitor.
+    //***************************************************************************
+    template <typename TVisitor>
+    void do_visitor(TVisitor& visitor) const
+    {
+      switch (index())
+      {
+        case 0: { auto arg = etl::get<0>(*this); visitor.visit(arg); break; }
+        case 1: { auto arg = etl::get<1>(*this); visitor.visit(arg); break; }
+        case 2: { auto arg = etl::get<2>(*this); visitor.visit(arg); break; }
+        case 3: { auto arg = etl::get<3>(*this); visitor.visit(arg); break; }
+        case 4: { auto arg = etl::get<4>(*this); visitor.visit(arg); break; }
+        case 5: { auto arg = etl::get<5>(*this); visitor.visit(arg); break; }
+        case 6: { auto arg = etl::get<6>(*this); visitor.visit(arg); break; }
+        case 7: { auto arg = etl::get<7>(*this); visitor.visit(arg); break; }
+#if !defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
+        case 8: { auto arg = etl::get<8>(*this); visitor.visit(arg); break; }
+        case 9: { auto arg = etl::get<9>(*this); visitor.visit(arg); break; }
+        case 10: { auto arg = etl::get<10>(*this); visitor.visit(arg); break; }
+        case 11: { auto arg = etl::get<11>(*this); visitor.visit(arg); break; }
+        case 12: { auto arg = etl::get<12>(*this); visitor.visit(arg); break; }
+        case 13: { auto arg = etl::get<13>(*this); visitor.visit(arg); break; }
+        case 14: { auto arg = etl::get<14>(*this); visitor.visit(arg); break; }
+        case 15: { auto arg = etl::get<15>(*this); visitor.visit(arg); break; }
+#if !defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
+        case 16: { auto arg = etl::get<16>(*this); visitor.visit(arg); break; }
+        case 17: { auto arg = etl::get<17>(*this); visitor.visit(arg); break; }
+        case 18: { auto arg = etl::get<18>(*this); visitor.visit(arg); break; }
+        case 19: { auto arg = etl::get<19>(*this); visitor.visit(arg); break; }
+        case 20: { auto arg = etl::get<20>(*this); visitor.visit(arg); break; }
+        case 21: { auto arg = etl::get<21>(*this); visitor.visit(arg); break; }
+        case 22: { auto arg = etl::get<22>(*this); visitor.visit(arg); break; }
+        case 23: { auto arg = etl::get<23>(*this); visitor.visit(arg); break; }
+#if !defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
+        case 24: { auto arg = etl::get<24>(*this); visitor.visit(arg); break; }
+        case 25: { auto arg = etl::get<25>(*this); visitor.visit(arg); break; }
+        case 26: { auto arg = etl::get<26>(*this); visitor.visit(arg); break; }
+        case 27: { auto arg = etl::get<27>(*this); visitor.visit(arg); break; }
+        case 28: { auto arg = etl::get<28>(*this); visitor.visit(arg); break; }
+        case 29: { auto arg = etl::get<29>(*this); visitor.visit(arg); break; }
+        case 30: { auto arg = etl::get<30>(*this); visitor.visit(arg); break; }
+        case 31: { auto arg = etl::get<31>(*this); visitor.visit(arg); break; }
 #endif
 #endif
 #endif
@@ -959,12 +1114,34 @@ namespace etl
     //***************************************************************************
     /// Attempt to call a visitor.
     //***************************************************************************
-    template <size_t Index>
-    bool attempt_visitor(etl::visitor<TTypes...>& visitor)
+    template <size_t Index, typename TVisitor>
+    bool attempt_visitor(TVisitor& visitor)
     {
       if (Index == index())
       {
-        visitor.visit(etl::get<Index>(*this));
+        auto v = etl::get<Index>(*this);
+        visitor.visit(v);
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    //***************************************************************************
+    /// Attempt to call a visitor.
+    //***************************************************************************
+    template <size_t Index, typename TVisitor>
+    bool attempt_visitor(TVisitor& visitor) const
+    {
+      if (Index == index())
+      {
+        // Workaround for MSVC (2023/05/13)
+        // It doesn't compile 'visitor.visit(etl::get<Index>(*this))' correctly for C++17 & C++20.
+        // Changed all of the instances for consistancy.
+        auto v = etl::get<Index>(*this);
+        visitor.visit(v);
         return true;
       }
       else
@@ -982,12 +1159,85 @@ namespace etl
     {
       (attempt_operator<I>(visitor) || ...);
     }
+
+    //***************************************************************************
+    /// Call the relevent visitor by attempting each one.
+    //***************************************************************************
+    template <typename TVisitor, size_t... I>
+    void do_operator(TVisitor& visitor, etl::index_sequence<I...>) const
+    {
+      (attempt_operator<I>(visitor) || ...);
+    }
 #else
     //***************************************************************************
     /// Call the relevent visitor.
     //***************************************************************************
     template <typename TVisitor>
     void do_operator(TVisitor& visitor)
+    {
+#if defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
+      ETL_STATIC_ASSERT(sizeof...(TTypes) <= 8U, "ETL_VARIANT_CPP11_MAX_8_TYPES - Only a maximum of 8 types are allowed in this variant");
+#endif
+
+#if defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
+      ETL_STATIC_ASSERT(sizeof...(TTypes) <= 16U, "ETL_VARIANT_CPP11_MAX_16_TYPES - Only a maximum of 16 types are allowed in this variant");
+#endif
+
+#if defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
+      ETL_STATIC_ASSERT(sizeof...(TTypes) <= 24U, "ETL_VARIANT_CPP11_MAX_24_TYPES - Only a maximum of 24 types are allowed in this variant");
+#endif
+
+      ETL_STATIC_ASSERT(sizeof...(TTypes) <= 32U, "A maximum of 32 types are allowed in this variant");
+
+      switch (index())
+      {
+        case 0: visitor(etl::get<0>(*this)); break;
+        case 1: visitor(etl::get<1>(*this)); break;
+        case 2: visitor(etl::get<2>(*this)); break;
+        case 3: visitor(etl::get<3>(*this)); break;
+        case 4: visitor(etl::get<4>(*this)); break;
+        case 5: visitor(etl::get<5>(*this)); break;
+        case 6: visitor(etl::get<6>(*this)); break;
+        case 7: visitor(etl::get<7>(*this)); break;
+#if !defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
+        case 8: visitor(etl::get<8>(*this)); break;
+        case 9: visitor(etl::get<9>(*this)); break;
+        case 10: visitor(etl::get<10>(*this)); break;
+        case 11: visitor(etl::get<11>(*this)); break;
+        case 12: visitor(etl::get<12>(*this)); break;
+        case 13: visitor(etl::get<13>(*this)); break;
+        case 14: visitor(etl::get<14>(*this)); break;
+        case 15: visitor(etl::get<15>(*this)); break;
+#if !defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
+        case 16: visitor(etl::get<16>(*this)); break;
+        case 17: visitor(etl::get<17>(*this)); break;
+        case 18: visitor(etl::get<18>(*this)); break;
+        case 19: visitor(etl::get<19>(*this)); break;
+        case 20: visitor(etl::get<20>(*this)); break;
+        case 21: visitor(etl::get<21>(*this)); break;
+        case 22: visitor(etl::get<22>(*this)); break;
+        case 23: visitor(etl::get<23>(*this)); break;
+#if !defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
+        case 24: visitor(etl::get<24>(*this)); break;
+        case 25: visitor(etl::get<25>(*this)); break;
+        case 26: visitor(etl::get<26>(*this)); break;
+        case 27: visitor(etl::get<27>(*this)); break;
+        case 28: visitor(etl::get<28>(*this)); break;
+        case 29: visitor(etl::get<29>(*this)); break;
+        case 30: visitor(etl::get<30>(*this)); break;
+        case 31: visitor(etl::get<31>(*this)); break;
+#endif
+#endif
+#endif
+        default: break;
+      }
+    }
+
+    //***************************************************************************
+    /// Call the relevent visitor.
+    //***************************************************************************
+    template <typename TVisitor>
+    void do_operator(TVisitor& visitor) const
     {
 #if defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
       ETL_STATIC_ASSERT(sizeof...(TTypes) <= 8U, "ETL_VARIANT_CPP11_MAX_8_TYPES - Only a maximum of 8 types are allowed in this variant");
@@ -1056,7 +1306,26 @@ namespace etl
     {
       if (Index == index())
       {
-        visitor(etl::get<Index>(*this));
+        auto v = etl::get<Index>(*this);
+        visitor(v);
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    //***************************************************************************
+    /// Attempt to call a visitor.
+    //***************************************************************************
+    template <size_t Index, typename TVisitor>
+    bool attempt_operator(TVisitor& visitor) const
+    {
+      if (Index == index())
+      {
+        auto v = etl::get<Index>(*this);
+        visitor(v);
         return true;
       }
       else
@@ -1352,10 +1621,10 @@ namespace etl
     /// in which every recursive instantiation of `visit_result_helper` appends
     /// more elements and give it a pass through `common_type_t`.
     //***************************************************************************
-    template <template <typename...> typename, typename...>
+    template <template <typename...> class, typename...>
     struct visit_result_helper;
 
-    template <template <typename...> typename TToInject, size_t... tAltIndices, typename TCur>
+    template <template <typename...> class TToInject, size_t... tAltIndices, typename TCur>
     struct visit_result_helper<TToInject, index_sequence<tAltIndices...>, TCur>
     {
       template <size_t tIndex>
@@ -1365,7 +1634,7 @@ namespace etl
       using type = common_type_t<TToInject<var_type<tAltIndices> >...>;
     };
 
-    template <template <typename...> typename TToInject, size_t... tAltIndices, typename TCur, typename TNext, typename... TVs>
+    template <template <typename...> class TToInject, size_t... tAltIndices, typename TCur, typename TNext, typename... TVs>
     struct visit_result_helper<TToInject, index_sequence<tAltIndices...>, TCur, TNext, TVs...>
     {
       template <size_t tIndex>

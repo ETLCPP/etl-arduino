@@ -267,7 +267,7 @@ namespace etl
         value_type* pvalue = storage.allocate<value_type>();
         ::new (pvalue) value_type(etl::move(value));
         ETL_INCREMENT_DEBUG_COUNT
-          result = refset_t::insert_at(i_element, *pvalue);
+        result = refset_t::insert_at(i_element, *pvalue);
       }
 
       return result;
@@ -1081,6 +1081,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename T, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t flat_set<T, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.
