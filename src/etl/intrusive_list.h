@@ -105,6 +105,20 @@ namespace etl
   };
 
   //***************************************************************************
+  /// Already exception for the intrusive_list.
+  ///\ingroup intrusive_list
+  //***************************************************************************
+  class intrusive_list_value_is_already_linked : public intrusive_list_exception
+  {
+  public:
+
+    intrusive_list_value_is_already_linked(string_type file_name_, numeric_type line_number_)
+      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:value is already linked", ETL_INTRUSIVE_LIST_FILE_ID"E"), file_name_, line_number_)
+    {
+    }
+  };
+
+  //***************************************************************************
   /// Base for intrusive list.
   ///\ingroup intrusive_list
   //***************************************************************************
@@ -148,6 +162,8 @@ namespace etl
     //*************************************************************************
     void push_front(link_type& value)
     {
+      ETL_ASSERT_OR_RETURN(!value.is_linked(), ETL_ERROR(intrusive_list_value_is_already_linked));
+
       insert_link(terminal_link, value);
     }
 
@@ -167,6 +183,8 @@ namespace etl
     //*************************************************************************
     void push_back(link_type& value)
     {
+      ETL_ASSERT_OR_RETURN(!value.is_linked(), ETL_ERROR(intrusive_list_value_is_already_linked));
+
       insert_link(terminal_link.link_type::etl_previous, value);
     }
 
@@ -186,6 +204,16 @@ namespace etl
     //*************************************************************************
     void clear()
     {
+      // Unlink all of the items.
+      link_type* p_unlink = terminal_link.etl_next;
+
+      while (p_unlink != &terminal_link)
+      {
+        link_type* p_next = p_unlink->etl_next;
+        p_unlink->clear();
+        p_unlink = p_next;
+      }
+
       initialise();
     }
 
@@ -354,7 +382,7 @@ namespace etl
   ///\ingroup intrusive_list
   ///\note TLink must be a base of TValue.
   //***************************************************************************
-  template <typename TValue, typename TLink = etl::bidirectional_link<0> >
+  template <typename TValue, typename TLink>
   class intrusive_list : public etl::intrusive_list_base<TLink>
   {
   public:
@@ -440,7 +468,7 @@ namespace etl
 
       pointer operator ->() const
       {
-        return *static_cast<pointer>(p_value);
+        return static_cast<pointer>(p_value);
       }
 
       friend bool operator == (const iterator& lhs, const iterator& rhs)
@@ -726,10 +754,17 @@ namespace etl
       link_type* p_first = const_cast<link_type*>(cp_first);
       link_type* p_last  = const_cast<link_type*>(cp_last);
 
+      this->current_size -= etl::distance(first, last);
+
       // Join the ends.
       etl::link<link_type>(p_first->etl_previous, p_last);
 
-      this->current_size -= etl::distance(first, last);
+      while (p_first != p_last)
+      {
+        link_type* p_next = p_first->etl_next;
+        p_first->clear();
+        p_first = p_next;
+      }
 
       if (p_last == &this->terminal_link)
       {

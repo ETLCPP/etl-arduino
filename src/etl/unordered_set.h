@@ -665,9 +665,10 @@ namespace etl
       if (bucket.empty())
       {
         // Get a new node.
-        node_t& node = create_data_node();
+        node_t& node = allocate_data_node();
+        node.clear();
         ::new (&node.key) value_type(key);
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
 
         // Just add the pointer to the bucket;
         bucket.insert_after(bucket.before_begin(), node);
@@ -698,9 +699,10 @@ namespace etl
         if (inode == bucket.end())
         {
           // Get a new node.
-          node_t& node = create_data_node();
+          node_t& node = allocate_data_node();
+          node.clear();
           ::new (&node.key) value_type(key);
-          ETL_INCREMENT_DEBUG_COUNT
+          ETL_INCREMENT_DEBUG_COUNT;
 
           // Add the node to the end of the bucket;
           bucket.insert_after(inode_previous, node);
@@ -738,9 +740,10 @@ namespace etl
       if (bucket.empty())
       {
         // Get a new node.
-        node_t& node = create_data_node();
+        node_t& node = allocate_data_node();
+        node.clear();
         ::new (&node.key) value_type(etl::move(key));
-        ETL_INCREMENT_DEBUG_COUNT
+        ETL_INCREMENT_DEBUG_COUNT;
 
           // Just add the pointer to the bucket;
           bucket.insert_after(bucket.before_begin(), node);
@@ -771,9 +774,10 @@ namespace etl
         if (inode == bucket.end())
         {
           // Get a new node.
-          node_t& node = create_data_node();
+          node_t& node = allocate_data_node();
+          node.clear();
           ::new (&node.key) value_type(etl::move(key));
-          ETL_INCREMENT_DEBUG_COUNT
+          ETL_INCREMENT_DEBUG_COUNT;
 
             // Add the node to the end of the bucket;
             bucket.insert_after(inode_previous, node);
@@ -855,12 +859,8 @@ namespace etl
       // Did we find it?
       if (icurrent != bucket.end())
       {
-        bucket.erase_after(iprevious);  // Unlink from the bucket.
-        icurrent->key.~value_type();    // Destroy the value.
-        pnodepool->release(&*icurrent); // Release it back to the pool.
-        adjust_first_last_markers_after_erase(&bucket);
+        delete_data_node(iprevious, icurrent, bucket);
         n = 1;
-        ETL_DECREMENT_DEBUG_COUNT
       }
 
       return n;
@@ -886,11 +886,7 @@ namespace etl
         ++iprevious;
       }
 
-      bucket.erase_after(iprevious);  // Unlink from the bucket.
-      icurrent->key.~value_type();    // Destroy the value.
-      pnodepool->release(&*icurrent); // Release it back to the pool.
-      adjust_first_last_markers_after_erase(&bucket);
-      ETL_DECREMENT_DEBUG_COUNT
+      delete_data_node(iprevious, icurrent, bucket);
 
       return inext;
     }
@@ -911,9 +907,6 @@ namespace etl
         return end();
       }
 
-      // Make a note of the last.
-      iterator result((pbuckets + number_of_buckets), last_.get_bucket_list_iterator(), last_.get_local_iterator());
-
       // Get the starting point.
       bucket_t*      pbucket     = first_.get_bucket_list_iterator();
       bucket_t*      pend_bucket = last_.get_bucket_list_iterator();
@@ -927,17 +920,13 @@ namespace etl
         ++iprevious;
       }
 
+      // Remember the item before the first erased one.
+      iterator ibefore_erased = iterator((pbuckets + number_of_buckets), pbucket, iprevious);
+
       // Until we reach the end.
       while ((icurrent != iend) || (pbucket != pend_bucket))
       {
-
-        local_iterator inext = pbucket->erase_after(iprevious); // Unlink from the bucket.
-        icurrent->key.~value_type();    // Destroy the value.
-        pnodepool->release(&*icurrent); // Release it back to the pool.
-        adjust_first_last_markers_after_erase(pbucket);
-        ETL_DECREMENT_DEBUG_COUNT
-
-        icurrent = inext;
+        icurrent = delete_data_node(iprevious, icurrent, *pbucket);
 
         // Have we not reached the end?
         if ((icurrent != iend) || (pbucket != pend_bucket))
@@ -957,7 +946,7 @@ namespace etl
         }
       }
 
-      return result;
+      return ++ibefore_erased;
     }
 
     //*************************************************************************
@@ -1237,7 +1226,7 @@ namespace etl
               // Destroy the value contents.
               it->key.~value_type();
               ++it;
-              ETL_DECREMENT_DEBUG_COUNT
+              ETL_DECREMENT_DEBUG_COUNT;
             }
 
             // Now it's safe to clear the bucket.
@@ -1280,7 +1269,7 @@ namespace etl
     //*************************************************************************
     /// Create a node.
     //*************************************************************************
-    node_t& create_data_node()
+    node_t& allocate_data_node()
     {
       node_t* (etl::ipool::*func)() = &etl::ipool::allocate<node_t>;
       return *(pnodepool->*func)();
@@ -1314,40 +1303,54 @@ namespace etl
     //*********************************************************************
     void adjust_first_last_markers_after_erase(bucket_t* pcurrent)
     {
-if (empty())
-{
-  first = pbuckets;
-  last = pbuckets;
-}
-else
-{
-  if (pcurrent == first)
-  {
-    // We erased the first so, we need to search again from where we erased.
-    while (first->empty())
-    {
-      ++first;
-    }
-  }
-  else if (pcurrent == last)
-  {
-    // We erased the last, so we need to search again. Start from the first, go no further than the current last.
-    bucket_t* pcurrent = first;
-    bucket_t* pend = last;
-
-    last = first;
-
-    while (pcurrent != pend)
-    {
-      if (!pcurrent->empty())
+      if (empty())
       {
-        last = pcurrent;
+        first = pbuckets;
+        last = pbuckets;
       }
+      else
+      {
+        if (pcurrent == first)
+        {
+          // We erased the first so, we need to search again from where we erased.
+          while (first->empty())
+          {
+            ++first;
+          }
+        }
+        else if (pcurrent == last)
+        {
+          // We erased the last, so we need to search again. Start from the first, go no further than the current last.
+          bucket_t* pcurrent = first;
+          bucket_t* pend = last;
 
-      ++pcurrent;
+          last = first;
+
+          while (pcurrent != pend)
+          {
+            if (!pcurrent->empty())
+            {
+              last = pcurrent;
+            }
+
+            ++pcurrent;
+          }
+        }
+      }
     }
-  }
-}
+
+    //*********************************************************************
+    /// Delete a data noe at the specified location.
+    //*********************************************************************
+    local_iterator delete_data_node(local_iterator iprevious, local_iterator icurrent, bucket_t& bucket)
+    {
+      local_iterator inext = bucket.erase_after(iprevious); // Unlink from the bucket.
+      icurrent->key.~value_type();                          // Destroy the value.
+      pnodepool->release(&*icurrent);                       // Release it back to the pool.
+      adjust_first_last_markers_after_erase(&bucket);
+      ETL_DECREMENT_DEBUG_COUNT;
+
+      return inext;
     }
 
     // Disable copy construction.
@@ -1373,7 +1376,7 @@ else
     key_equal key_equal_function;
 
     /// For library debugging purposes only.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
 
       //*************************************************************************
       /// Destructor.

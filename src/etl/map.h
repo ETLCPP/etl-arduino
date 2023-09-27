@@ -450,7 +450,7 @@ namespace etl
     size_type current_size;   ///< The number of the used nodes.
     const size_type CAPACITY; ///< The maximum size of the map.
     Node* root_node;          ///< The node that acts as the map root.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
   };
 
   //***************************************************************************
@@ -935,18 +935,13 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
         // Get next available free node
-        Data_Node& node = create_data_node();
-
-        ::new ((void*)etl::addressof(node.value.first))  key_type(etl::move(key));
-        ::new ((void*)etl::addressof(node.value.second)) mapped_type();
+        Data_Node& node = allocate_data_node_with_key(etl::move(key));
 
         // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
         inserted_node = insert_node(root_node, node);
 
         // Insert node into tree and return iterator to new node location in tree
         i_element = iterator(*this, inserted_node);
-
-        ETL_INCREMENT_DEBUG_COUNT
       }
 
       return i_element->second;
@@ -970,10 +965,7 @@ namespace etl
         ETL_ASSERT(!full(), ETL_ERROR(map_full));
 
         // Get next available free node
-        Data_Node& node = create_data_node();
-
-        ::new (etl::addressof(node.value.first))  key_type(key);
-        ::new (etl::addressof(node.value.second)) mapped_type();
+        Data_Node& node = allocate_data_node_with_key(key);
 
         // Obtain the inserted node (might be ETL_NULLPTR if node was a duplicate)
         inserted_node = insert_node(root_node, node);
@@ -1504,9 +1496,22 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new (&node.value) value_type(value);
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
+      return node;
+    }
+
+    //*************************************************************************
+    /// Allocate a Data_Node with the supplied key.
+    //*************************************************************************
+    Data_Node& allocate_data_node_with_key(const_key_reference key)
+    {
+      Data_Node& node = allocate_data_node();
+
+      ::new ((void*)etl::addressof(node.value.first))  key_type(key);
+      ::new ((void*)etl::addressof(node.value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
       return node;
     }
 
@@ -1516,17 +1521,31 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new (&node.value) value_type(etl::move(value));
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
       return node;
     }
+
+    //*************************************************************************
+    /// Allocate a Data_Node with the supplied key.
+    //*************************************************************************
+    Data_Node& allocate_data_node_with_key(rvalue_key_reference key)
+    {
+      Data_Node& node = allocate_data_node();
+
+      ::new ((void*)etl::addressof(node.value.first))  key_type(etl::move(key));
+      ::new ((void*)etl::addressof(node.value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
+      return node;
+    }
+
 #endif
 
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& create_data_node()
+    Data_Node& allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
       return *(p_node_pool->*func)();
@@ -1539,7 +1558,7 @@ namespace etl
     {
       node.value.~value_type();
       p_node_pool->release(&node);
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************

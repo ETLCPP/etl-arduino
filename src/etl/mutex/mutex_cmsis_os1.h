@@ -1,5 +1,3 @@
-///\file
-
 /******************************************************************************
 The MIT License(MIT)
 
@@ -7,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 John Wellbelove
+Copyright(c) 2022 John Wellbelove, Aron P. Müller
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -28,51 +26,59 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_THRESHOLD_INCLUDED
-#define ETL_THRESHOLD_INCLUDED
+#ifndef ETL_MUTEX_CMSIS_RTOS1_RTX_INCLUDED
+#define ETL_MUTEX_CMSIS_RTOS1_RTX_INCLUDED
 
-#include "platform.h"
-#include "functional.h"
-#include "type_traits.h"
+#include "../platform.h"
 
-//#include <math.h>
-#include <stdint.h>
+#include <cmsis_os.h>
 
 namespace etl
 {
   //***************************************************************************
-  /// Threshold.
+  ///\ingroup mutex
+  ///\brief This mutex class is implemented using CMSIS's RTOS1 (RTX) mutexes
   //***************************************************************************
-  template<typename TInput, typename TCompare = etl::less<TInput> >
-  class threshold : public etl::unary_function<TInput, TInput>
+  class mutex
   {
   public:
 
-    //*****************************************************************
-    // Constructor.
-    //*****************************************************************
-    threshold(TInput threshold_value_, TInput true_value_, TInput false_value_, TCompare compare_ = TCompare())
-      : threshold_value(threshold_value_)
-      , true_value(true_value_)
-      , false_value(false_value_)
-      , compare(compare_)
+    mutex()
+      : os_mutex_cb_etl()
+      , id(NULL)
     {
+      const osMutexDef_t os_mutex_def_etl = { os_mutex_cb_etl };
+      id = osMutexCreate(osMutex(etl));
     }
 
-    //*****************************************************************
-    // operator ()
-    //*****************************************************************
-    TInput operator ()(TInput value) const
+    ~mutex()
     {
-      return compare(value, threshold_value) ? true_value : false_value;
+      osMutexDelete(id);
+    }
+
+    void lock()
+    {
+      osMutexWait(id, osWaitForever);
+    }
+
+    bool try_lock()
+    {
+      return osMutexWait(id, 0) == osOK;
+    }
+
+    void unlock()
+    {
+      osMutexRelease(id);
     }
 
   private:
 
-    const TInput   threshold_value;
-    const TInput   true_value;
-    const TInput   false_value;
-    const TCompare compare;
+    mutex(const mutex&) ETL_DELETE;
+    mutex& operator=(const mutex&) ETL_DELETE;
+
+    /// RTX specific
+    uint32_t os_mutex_cb_etl[4];
+    osMutexId id;
   };
 }
 

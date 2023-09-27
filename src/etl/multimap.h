@@ -613,7 +613,7 @@ namespace etl
     size_type current_size;   ///< The number of the used nodes.
     const size_type CAPACITY; ///< The maximum size of the map.
     Node* root_node;          ///< The node that acts as the multimap root.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
   };
 
   //***************************************************************************
@@ -1542,9 +1542,9 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new (&node.value) const value_type(value);
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
       return node;
     }
 
@@ -1554,9 +1554,9 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new (&node.value) const value_type(etl::move(value));
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
       return node;
     }
 #endif
@@ -1564,7 +1564,7 @@ namespace etl
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& create_data_node()
+    Data_Node& allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
       return *(p_node_pool->*func)();
@@ -1577,7 +1577,7 @@ namespace etl
     {
       node.value.~value_type();
       p_node_pool->release(&node);
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************

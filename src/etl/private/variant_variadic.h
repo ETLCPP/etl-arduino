@@ -430,7 +430,7 @@ namespace etl
   /// 'Bad variant access' exception for the variant class.
   ///\ingroup variant
   //***************************************************************************
-  class bad_variant_access : public variant_exception 
+  class bad_variant_access : public variant_exception
   {
   public:
     bad_variant_access(string_type file_name_, numeric_type line_number_)
@@ -524,7 +524,7 @@ namespace etl
     /// Default constructor.
     /// Sets the state of the instance to containing no valid data.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     ETL_CONSTEXPR14 variant()
     {
       using type = typename etl::private_variant::parameter_pack<TTypes...>::template type_from_index<0U>::type;
@@ -533,12 +533,12 @@ namespace etl
       operation = operation_type<type, etl::is_copy_constructible<type>::value, etl::is_move_constructible<type>::value>::do_operation;
       type_id   = 0U;
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Construct from a value.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     template <typename T, etl::enable_if_t<!etl::is_same<etl::remove_cvref_t<T>, variant>::value, int> = 0>
     ETL_CONSTEXPR14 variant(T&& value)
       : operation(operation_type<etl::remove_cvref_t<T>, etl::is_copy_constructible<etl::remove_cvref_t<T>>::value, etl::is_move_constructible<etl::remove_cvref_t<T>>::value>::do_operation)
@@ -548,12 +548,12 @@ namespace etl
 
       construct_in_place<etl::remove_cvref_t<T>>(data, etl::forward<T>(value));
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Construct from arguments.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     template <typename T, typename... TArgs>
     ETL_CONSTEXPR14 explicit variant(etl::in_place_type_t<T>, TArgs&&... args)
       : operation(operation_type<etl::remove_cvref_t<T>, etl::is_copy_constructible<etl::remove_cvref_t<T>>::value, etl::is_move_constructible<etl::remove_cvref_t<T>>::value>::do_operation)
@@ -563,12 +563,12 @@ namespace etl
 
       construct_in_place_args<etl::remove_cvref_t<T>>(data, etl::forward<TArgs>(args)...);
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Construct from arguments.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     template <size_t Index, typename... TArgs>
     ETL_CONSTEXPR14 explicit variant(etl::in_place_index_t<Index>, TArgs&&... args)
       : type_id(Index)
@@ -580,13 +580,13 @@ namespace etl
 
       operation = operation_type<type, etl::is_copy_constructible<type>::value, etl::is_move_constructible<type>::value>::do_operation;
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
 #if ETL_HAS_INITIALIZER_LIST
     //***************************************************************************
     /// Construct from type, initializer_list and arguments.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     template <typename T, typename U, typename... TArgs >
     ETL_CONSTEXPR14 explicit variant(etl::in_place_type_t<T>, std::initializer_list<U> init, TArgs&&... args)
       : operation(operation_type<etl::remove_cvref_t<T>, etl::is_copy_constructible<etl::remove_cvref_t<T>>::value, etl::is_move_constructible<etl::remove_cvref_t<T>>::value>::do_operation)
@@ -596,12 +596,12 @@ namespace etl
 
       construct_in_place_args<etl::remove_cvref_t<T>>(data, init, etl::forward<TArgs>(args)...);
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Construct from index, initializer_list and arguments.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     template <size_t Index, typename U, typename... TArgs >
     ETL_CONSTEXPR14 explicit variant(etl::in_place_index_t<Index>, std::initializer_list<U> init, TArgs&&... args)
       : type_id(Index)
@@ -613,14 +613,14 @@ namespace etl
 
       operation = operation_type<type, etl::is_copy_constructible<type>::value, etl::is_move_constructible<type>::value>::do_operation;
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 #endif
 
     //***************************************************************************
     /// Copy constructor.
     ///\param other The other variant object to copy.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     ETL_CONSTEXPR14 variant(const variant& other)
       : operation(other.operation)
       , type_id(other.type_id)
@@ -637,13 +637,13 @@ namespace etl
         }
       }
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Move constructor.
     ///\param other The other variant object to copy.
     //***************************************************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "diagnostic_uninitialized_push.h"
     ETL_CONSTEXPR14 variant(variant&& other)
       : operation(other.operation)
       , type_id(other.type_id)
@@ -664,7 +664,7 @@ namespace etl
         type_id = variant_npos;
       }
     }
-#include "etl/private/diagnostic_pop.h"
+#include "diagnostic_pop.h"
 
     //***************************************************************************
     /// Destructor.
@@ -705,8 +705,8 @@ namespace etl
     /// Emplace by index with variadic constructor parameters.
     //***************************************************************************
     template <size_t Index, typename... TArgs>
-    typename etl::variant_alternative<Index, variant<TArgs...>>::type emplace(TArgs&&... args)
-    {    
+    typename etl::variant_alternative<Index, variant<TArgs...>>::type& emplace(TArgs&&... args)
+    {
       static_assert(Index < etl::private_variant::parameter_pack<TTypes...>::size, "Index out of range");
 
       using type = typename etl::private_variant::parameter_pack<TTypes...>::template type_from_index<Index>::type;
@@ -825,7 +825,9 @@ namespace etl
     //***************************************************************************
     /// Accept an etl::visitor.
     //***************************************************************************
-    void accept(etl::visitor<TTypes...>& v)
+    template <typename TVisitor>
+    etl::enable_if_t<etl::is_visitor<TVisitor>::value, void>
+      accept(TVisitor& v)
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
       do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
@@ -837,7 +839,9 @@ namespace etl
     //***************************************************************************
     /// Accept an etl::visitor.
     //***************************************************************************
-    void accept(etl::visitor<TTypes...>& v) const
+    template <typename TVisitor>
+    etl::enable_if_t<etl::is_visitor<TVisitor>::value, void>
+      accept(TVisitor& v) const
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
       do_visitor(v, etl::make_index_sequence<sizeof...(TTypes)>{});
@@ -850,7 +854,7 @@ namespace etl
     /// Accept a generic functor.
     //***************************************************************************
     template <typename TVisitor>
-    etl::enable_if_t<!etl::is_base_of<etl::visitor<TTypes...>, TVisitor>::value, void>
+    etl::enable_if_t<!etl::is_visitor<TVisitor>::value, void>
       accept(TVisitor& v)
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
@@ -864,7 +868,7 @@ namespace etl
     /// Accept a generic functor.
     //***************************************************************************
     template <typename TVisitor>
-    etl::enable_if_t<!etl::is_base_of<etl::visitor<TTypes...>, TVisitor>::value, void>
+    etl::enable_if_t<!etl::is_visitor<TVisitor>::value, void>
       accept(TVisitor& v) const
     {
 #if ETL_USING_CPP17 && !defined(ETL_VARIANT_FORCE_CPP11)
@@ -1018,41 +1022,41 @@ namespace etl
     {
       switch (index())
       {
-        case 0: { auto arg = etl::get<0>(*this); visitor.visit(arg); break; }
-        case 1: { auto arg = etl::get<1>(*this); visitor.visit(arg); break; }
-        case 2: { auto arg = etl::get<2>(*this); visitor.visit(arg); break; }
-        case 3: { auto arg = etl::get<3>(*this); visitor.visit(arg); break; }
-        case 4: { auto arg = etl::get<4>(*this); visitor.visit(arg); break; }
-        case 5: { auto arg = etl::get<5>(*this); visitor.visit(arg); break; }
-        case 6: { auto arg = etl::get<6>(*this); visitor.visit(arg); break; }
-        case 7: { auto arg = etl::get<7>(*this); visitor.visit(arg); break; }
+        case 0: { visitor.visit(etl::get<0>(*this)); break; }
+        case 1: { visitor.visit(etl::get<1>(*this)); break; }
+        case 2: { visitor.visit(etl::get<2>(*this)); break; }
+        case 3: { visitor.visit(etl::get<3>(*this)); break; }
+        case 4: { visitor.visit(etl::get<4>(*this)); break; }
+        case 5: { visitor.visit(etl::get<5>(*this)); break; }
+        case 6: { visitor.visit(etl::get<6>(*this)); break; }
+        case 7: { visitor.visit(etl::get<7>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
-        case 8: { auto arg = etl::get<8>(*this); visitor.visit(arg); break; }
-        case 9: { auto arg = etl::get<9>(*this); visitor.visit(arg); break; }
-        case 10: { auto arg = etl::get<10>(*this); visitor.visit(arg); break; }
-        case 11: { auto arg = etl::get<11>(*this); visitor.visit(arg); break; }
-        case 12: { auto arg = etl::get<12>(*this); visitor.visit(arg); break; }
-        case 13: { auto arg = etl::get<13>(*this); visitor.visit(arg); break; }
-        case 14: { auto arg = etl::get<14>(*this); visitor.visit(arg); break; }
-        case 15: { auto arg = etl::get<15>(*this); visitor.visit(arg); break; }
+        case 8: { visitor.visit(etl::get<8>(*this)); break; }
+        case 9: { visitor.visit(etl::get<9>(*this)); break; }
+        case 10: { visitor.visit(etl::get<10>(*this)); break; }
+        case 11: { visitor.visit(etl::get<11>(*this)); break; }
+        case 12: { visitor.visit(etl::get<12>(*this)); break; }
+        case 13: { visitor.visit(etl::get<13>(*this)); break; }
+        case 14: { visitor.visit(etl::get<14>(*this)); break; }
+        case 15: { visitor.visit(etl::get<15>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
-        case 16: { auto arg = etl::get<16>(*this); visitor.visit(arg); break; }
-        case 17: { auto arg = etl::get<17>(*this); visitor.visit(arg); break; }
-        case 18: { auto arg = etl::get<18>(*this); visitor.visit(arg); break; }
-        case 19: { auto arg = etl::get<19>(*this); visitor.visit(arg); break; }
-        case 20: { auto arg = etl::get<20>(*this); visitor.visit(arg); break; }
-        case 21: { auto arg = etl::get<21>(*this); visitor.visit(arg); break; }
-        case 22: { auto arg = etl::get<22>(*this); visitor.visit(arg); break; }
-        case 23: { auto arg = etl::get<23>(*this); visitor.visit(arg); break; }
+        case 16: { visitor.visit(etl::get<16>(*this)); break; }
+        case 17: { visitor.visit(etl::get<17>(*this)); break; }
+        case 18: { visitor.visit(etl::get<18>(*this)); break; }
+        case 19: { visitor.visit(etl::get<19>(*this)); break; }
+        case 20: { visitor.visit(etl::get<20>(*this)); break; }
+        case 21: { visitor.visit(etl::get<21>(*this)); break; }
+        case 22: { visitor.visit(etl::get<22>(*this)); break; }
+        case 23: { visitor.visit(etl::get<23>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
-        case 24: { auto arg = etl::get<24>(*this); visitor.visit(arg); break; }
-        case 25: { auto arg = etl::get<25>(*this); visitor.visit(arg); break; }
-        case 26: { auto arg = etl::get<26>(*this); visitor.visit(arg); break; }
-        case 27: { auto arg = etl::get<27>(*this); visitor.visit(arg); break; }
-        case 28: { auto arg = etl::get<28>(*this); visitor.visit(arg); break; }
-        case 29: { auto arg = etl::get<29>(*this); visitor.visit(arg); break; }
-        case 30: { auto arg = etl::get<30>(*this); visitor.visit(arg); break; }
-        case 31: { auto arg = etl::get<31>(*this); visitor.visit(arg); break; }
+        case 24: { visitor.visit(etl::get<24>(*this)); break; }
+        case 25: { visitor.visit(etl::get<25>(*this)); break; }
+        case 26: { visitor.visit(etl::get<26>(*this)); break; }
+        case 27: { visitor.visit(etl::get<27>(*this)); break; }
+        case 28: { visitor.visit(etl::get<28>(*this)); break; }
+        case 29: { visitor.visit(etl::get<29>(*this)); break; }
+        case 30: { visitor.visit(etl::get<30>(*this)); break; }
+        case 31: { visitor.visit(etl::get<31>(*this)); break; }
 #endif
 #endif
 #endif
@@ -1068,41 +1072,41 @@ namespace etl
     {
       switch (index())
       {
-        case 0: { auto arg = etl::get<0>(*this); visitor.visit(arg); break; }
-        case 1: { auto arg = etl::get<1>(*this); visitor.visit(arg); break; }
-        case 2: { auto arg = etl::get<2>(*this); visitor.visit(arg); break; }
-        case 3: { auto arg = etl::get<3>(*this); visitor.visit(arg); break; }
-        case 4: { auto arg = etl::get<4>(*this); visitor.visit(arg); break; }
-        case 5: { auto arg = etl::get<5>(*this); visitor.visit(arg); break; }
-        case 6: { auto arg = etl::get<6>(*this); visitor.visit(arg); break; }
-        case 7: { auto arg = etl::get<7>(*this); visitor.visit(arg); break; }
+        case 0: { visitor.visit(etl::get<0>(*this)); break; }
+        case 1: { visitor.visit(etl::get<1>(*this)); break; }
+        case 2: { visitor.visit(etl::get<2>(*this)); break; }
+        case 3: { visitor.visit(etl::get<3>(*this)); break; }
+        case 4: { visitor.visit(etl::get<4>(*this)); break; }
+        case 5: { visitor.visit(etl::get<5>(*this)); break; }
+        case 6: { visitor.visit(etl::get<6>(*this)); break; }
+        case 7: { visitor.visit(etl::get<7>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_8_TYPES)
-        case 8: { auto arg = etl::get<8>(*this); visitor.visit(arg); break; }
-        case 9: { auto arg = etl::get<9>(*this); visitor.visit(arg); break; }
-        case 10: { auto arg = etl::get<10>(*this); visitor.visit(arg); break; }
-        case 11: { auto arg = etl::get<11>(*this); visitor.visit(arg); break; }
-        case 12: { auto arg = etl::get<12>(*this); visitor.visit(arg); break; }
-        case 13: { auto arg = etl::get<13>(*this); visitor.visit(arg); break; }
-        case 14: { auto arg = etl::get<14>(*this); visitor.visit(arg); break; }
-        case 15: { auto arg = etl::get<15>(*this); visitor.visit(arg); break; }
+        case 8: { visitor.visit(etl::get<8>(*this)); break; }
+        case 9: { visitor.visit(etl::get<9>(*this)); break; }
+        case 10: { visitor.visit(etl::get<10>(*this)); break; }
+        case 11: { visitor.visit(etl::get<11>(*this)); break; }
+        case 12: { visitor.visit(etl::get<12>(*this)); break; }
+        case 13: { visitor.visit(etl::get<13>(*this)); break; }
+        case 14: { visitor.visit(etl::get<14>(*this)); break; }
+        case 15: { visitor.visit(etl::get<15>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_16_TYPES)
-        case 16: { auto arg = etl::get<16>(*this); visitor.visit(arg); break; }
-        case 17: { auto arg = etl::get<17>(*this); visitor.visit(arg); break; }
-        case 18: { auto arg = etl::get<18>(*this); visitor.visit(arg); break; }
-        case 19: { auto arg = etl::get<19>(*this); visitor.visit(arg); break; }
-        case 20: { auto arg = etl::get<20>(*this); visitor.visit(arg); break; }
-        case 21: { auto arg = etl::get<21>(*this); visitor.visit(arg); break; }
-        case 22: { auto arg = etl::get<22>(*this); visitor.visit(arg); break; }
-        case 23: { auto arg = etl::get<23>(*this); visitor.visit(arg); break; }
+        case 16: { visitor.visit(etl::get<16>(*this)); break; }
+        case 17: { visitor.visit(etl::get<17>(*this)); break; }
+        case 18: { visitor.visit(etl::get<18>(*this)); break; }
+        case 19: { visitor.visit(etl::get<19>(*this)); break; }
+        case 20: { visitor.visit(etl::get<20>(*this)); break; }
+        case 21: { visitor.visit(etl::get<21>(*this)); break; }
+        case 22: { visitor.visit(etl::get<22>(*this)); break; }
+        case 23: { visitor.visit(etl::get<23>(*this)); break; }
 #if !defined(ETL_VARIANT_CPP11_MAX_24_TYPES)
-        case 24: { auto arg = etl::get<24>(*this); visitor.visit(arg); break; }
-        case 25: { auto arg = etl::get<25>(*this); visitor.visit(arg); break; }
-        case 26: { auto arg = etl::get<26>(*this); visitor.visit(arg); break; }
-        case 27: { auto arg = etl::get<27>(*this); visitor.visit(arg); break; }
-        case 28: { auto arg = etl::get<28>(*this); visitor.visit(arg); break; }
-        case 29: { auto arg = etl::get<29>(*this); visitor.visit(arg); break; }
-        case 30: { auto arg = etl::get<30>(*this); visitor.visit(arg); break; }
-        case 31: { auto arg = etl::get<31>(*this); visitor.visit(arg); break; }
+        case 24: { visitor.visit(etl::get<24>(*this)); break; }
+        case 25: { visitor.visit(etl::get<25>(*this)); break; }
+        case 26: { visitor.visit(etl::get<26>(*this)); break; }
+        case 27: { visitor.visit(etl::get<27>(*this)); break; }
+        case 28: { visitor.visit(etl::get<28>(*this)); break; }
+        case 29: { visitor.visit(etl::get<29>(*this)); break; }
+        case 30: { visitor.visit(etl::get<30>(*this)); break; }
+        case 31: { visitor.visit(etl::get<31>(*this)); break; }
 #endif
 #endif
 #endif
@@ -1119,7 +1123,10 @@ namespace etl
     {
       if (Index == index())
       {
-        auto v = etl::get<Index>(*this);
+        // Workaround for MSVC (2023/05/13)
+        // It doesn't compile 'visitor.visit(etl::get<Index>(*this))' correctly for C++17 & C++20.
+        // Changed all of the instances for consistancy.
+        auto& v = etl::get<Index>(*this);
         visitor.visit(v);
         return true;
       }
@@ -1140,7 +1147,7 @@ namespace etl
         // Workaround for MSVC (2023/05/13)
         // It doesn't compile 'visitor.visit(etl::get<Index>(*this))' correctly for C++17 & C++20.
         // Changed all of the instances for consistancy.
-        auto v = etl::get<Index>(*this);
+        auto& v = etl::get<Index>(*this);
         visitor.visit(v);
         return true;
       }
@@ -1306,7 +1313,7 @@ namespace etl
     {
       if (Index == index())
       {
-        auto v = etl::get<Index>(*this);
+        auto& v = etl::get<Index>(*this);
         visitor(v);
         return true;
       }
@@ -1324,7 +1331,7 @@ namespace etl
     {
       if (Index == index())
       {
-        auto v = etl::get<Index>(*this);
+        auto& v = etl::get<Index>(*this);
         visitor(v);
         return true;
       }
@@ -1693,7 +1700,7 @@ namespace etl
     struct do_visit_helper
     {
       using function_pointer = add_pointer_t<TRet(TCallable&&, TCurVariant&&, TVarRest&&...)>;
-      
+
       template <size_t tIndex>
       static constexpr function_pointer fptr() noexcept
       {
@@ -1708,10 +1715,10 @@ namespace etl
     static ETL_CONSTEXPR14 TRet do_visit(TCallable&& f, TVariant&& v, index_sequence<tIndices...>, TVarRest&&... variants)
     {
       ETL_ASSERT(!v.valueless_by_exception(), ETL_ERROR(bad_variant_access));
-      
+
       using helper_t = do_visit_helper<TRet, TCallable, TVariant, TVarRest...>;
       using func_ptr = typename helper_t::function_pointer;
-      
+
       constexpr func_ptr jmp_table[]
       {
         helper_t::template fptr<tIndices>()...
