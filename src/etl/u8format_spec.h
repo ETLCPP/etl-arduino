@@ -28,16 +28,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-/*
- * The header include guard has been intentionally omitted.
- * This file is intended to evaluated multiple times by design.
- */
+#ifndef ETL_U8FORMAT_SPEC_INCLUDED
+#define ETL_U8FORMAT_SPEC_INCLUDED
 
-#if defined(__GNUC__) && (__GNUC__ >= 11) && !defined(__clang__) && !defined(__llvm__)
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wstringop-overread"
-#endif
+///\ingroup string
 
-#if defined(__clang__) || defined(__llvm__)
-  #pragma clang diagnostic push
+#include "platform.h"
+#include "basic_format_spec.h"
+#include "u8string.h"
+
+namespace etl
+{
+  typedef etl::basic_format_spec<etl::iu8string> u8format_spec;
+}
+
 #endif

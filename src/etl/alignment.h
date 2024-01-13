@@ -76,9 +76,8 @@ namespace etl
   //*****************************************************************************
   inline bool is_aligned(void* p, size_t required_alignment)
   {
-    uintptr_t alignment = static_cast<uintptr_t>(required_alignment);
     uintptr_t address = reinterpret_cast<uintptr_t>(p);
-    return (address % alignment) == 0U;
+    return (address % required_alignment) == 0U;
   }
 
   //*****************************************************************************
@@ -88,7 +87,7 @@ namespace etl
   bool is_aligned(void* p)
   {
     uintptr_t address = reinterpret_cast<uintptr_t>(p);
-    return (address % static_cast<uintptr_t>(Alignment)) == 0U;
+    return (address % Alignment) == 0U;
   }
 
   //*****************************************************************************
@@ -204,12 +203,23 @@ namespace etl
   {
   public:
 
-#if ETL_NOT_USING_64BIT_TYPES
-    typedef typename private_alignment::type_with_alignment_helper<Alignment, int_least8_t, int_least16_t, int32_t, float, double, void*>::type type;
+#if ETL_USING_CPP11
+    typedef struct { alignas(Alignment) char dummy; } type;
 #else
-    typedef typename private_alignment::type_with_alignment_helper<Alignment, int_least8_t, int_least16_t, int32_t, int64_t, float, double, void*>::type type;
+  #if ETL_NOT_USING_64BIT_TYPES
+      typedef typename private_alignment::type_with_alignment_helper<Alignment, int_least8_t, int_least16_t, int32_t, float, double, void*>::type type;
+  #else
+      typedef typename private_alignment::type_with_alignment_helper<Alignment, int_least8_t, int_least16_t, int32_t, int64_t, float, double, void*>::type type;
+  #endif
 #endif
+
+    ETL_STATIC_ASSERT(etl::alignment_of<type>::value == Alignment, "Unable to create the type with the specified alignment");
   };
+
+#if ETL_USING_CPP11
+  template <size_t Alignment>
+  using type_with_alignment_t = typename type_with_alignment<Alignment>::type;
+#endif
 
   //***************************************************************************
   /// Aligned storage

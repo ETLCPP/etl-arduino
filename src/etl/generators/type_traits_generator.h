@@ -313,7 +313,7 @@ namespace etl
   /// is_signed
   template <typename T> struct is_signed : false_type {};
   template <> struct is_signed<char> : etl::bool_constant<(char(255) < 0)> {};
-  template <> struct is_signed<wchar_t> : public etl::bool_constant<static_cast<bool>(wchar_t(-1) < wchar_t(0))> {};
+  template <> struct is_signed<wchar_t> : public etl::bool_constant<wchar_t(-1) < wchar_t(0)> {};
   template <> struct is_signed<signed char> : true_type {};
   template <> struct is_signed<short> : true_type {};
   template <> struct is_signed<int> : true_type {};
@@ -1380,7 +1380,7 @@ typedef integral_constant<bool, true>  true_type;
   import cog
   cog.outl("//***************************************************************************")
   cog.outl("/// Template to determine if a type is one of a specified list.")
-  cog.outl("///\ingroup types")
+  cog.outl("///\\ingroup types")
   cog.outl("template <typename T,")
   cog.out("          ")
   cog.out("typename T1, ")

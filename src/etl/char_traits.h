@@ -56,6 +56,24 @@ namespace etl
     typedef char      state_type;
   };
 
+  template<> struct char_traits_types<signed char>
+  {
+    typedef signed char char_type;
+    typedef int         int_type;
+    typedef long long   off_type;
+    typedef size_t      pos_type;
+    typedef signed char state_type;
+  };
+
+  template<> struct char_traits_types<unsigned char>
+  {
+    typedef unsigned char char_type;
+    typedef int           int_type;
+    typedef long long     off_type;
+    typedef size_t        pos_type;
+    typedef unsigned char state_type;
+  };
+
   template<> struct char_traits_types<wchar_t>
   {
     typedef wchar_t        char_type;
