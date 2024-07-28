@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 John Wellbelove
+Copyright(c) 2024 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -28,68 +28,116 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_ABSOLUTE_INCLUDED
-#define ETL_ABSOLUTE_INCLUDED
+#ifndef ETL_GDC_INCLUDED
+#define ETL_GDC_INCLUDED
 
 #include "type_traits.h"
-#include "integral_limits.h"
+#include "absolute.h"
+#include "static_assert.h"
 
 namespace etl
 {
   //***************************************************************************
+  // Greatest Common Divisor.
+  // For unsigned types.
+  //***************************************************************************
+  template <typename T>
+  ETL_NODISCARD
+  ETL_CONSTEXPR14
+  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
+    gcd(T a, T b) ETL_NOEXCEPT
+  {
+    ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Integral type required");
+
+    if ((a == 0 || b == 0))
+    {
+      return (a + b);
+    }
+
+    while (b != 0) 
+    {
+      T t = b;
+      b = a % b;
+      a = t;
+    }
+    
+    return a;
+  }
+
+  //***************************************************************************
+  // Greatest Common Divisor.
   // For signed types.
   //***************************************************************************
   template <typename T>
   ETL_NODISCARD
-  ETL_CONSTEXPR 
+  ETL_CONSTEXPR14
   typename etl::enable_if<etl::is_signed<T>::value, T>::type
-    absolute(T value) ETL_NOEXCEPT
+    gcd(T a, T b) ETL_NOEXCEPT
   {
-    return (value < T(0)) ? -value : value;
+    ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Integral type required");
+
+    typedef typename etl::make_unsigned<T>::type utype;
+
+    utype ua = etl::absolute_unsigned(a);
+    utype ub = etl::absolute_unsigned(b);
+
+    return static_cast<T>(gcd(ua, ub));
   }
 
-  //***************************************************************************
-  // For unsigned types.
-  //***************************************************************************
-  template <typename T>
-  ETL_NODISCARD
-  ETL_CONSTEXPR
-  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
-    absolute(T value) ETL_NOEXCEPT
-  {
-    return value;
-  }
-
-  //***************************************************************************
-  // For signed types.
-  // Returns the result as the unsigned type.
-  //***************************************************************************
 #if ETL_USING_CPP11
-  template <typename T, typename TReturn = typename etl::make_unsigned<T>::type>
-#else
-  template <typename T, typename TReturn>
-  #endif
+  #if ETL_HAS_INITIALIZER_LIST
+  //***************************************************************************
+  // Greatest Common Divisor.
+  // Non-recursive, using an initializer_list.
+  // Top level variadic function.
+  //***************************************************************************
+  template<typename T, typename... TRest>
   ETL_NODISCARD
-  ETL_CONSTEXPR 
-  typename etl::enable_if<etl::is_signed<T>::value, TReturn>::type
-    absolute_unsigned(T value) ETL_NOEXCEPT
+  ETL_CONSTEXPR14
+  T gcd(T first, TRest... rest) ETL_NOEXCEPT
   {
-    return (value == etl::integral_limits<T>::min) ? (etl::integral_limits<TReturn>::max / 2U) + 1U
-                                                   : (value < T(0)) ? TReturn(-value) : TReturn(value);
-  }
+    T result = first;
 
-  //***************************************************************************
-  // For unsigned types.
-  // Returns the result as the unsigned type.
-  //***************************************************************************
-  template <typename T>
-  ETL_NODISCARD
-  ETL_CONSTEXPR
-  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
-    absolute_unsigned(T value) ETL_NOEXCEPT
-  {
-    return etl::absolute(value);
+    for (T value : {rest...})
+    {
+      result = gcd(result, value);
+
+      if (result == 1)
+      {
+        // Early termination: if the GCD is one, it will remain one
+        // no matter what other numbers are processed.
+        return 1;
+      }
+    }
+
+    return result;
   }
+  #else
+  //***************************************************************************
+  // Greatest Common Divisor.
+  // Recursive.
+  // Top level variadic function.
+  //***************************************************************************
+  template<typename T, typename... TRest>
+  ETL_NODISCARD
+  ETL_CONSTEXPR14
+  T gcd(T a, T b, TRest... rest) ETL_NOEXCEPT
+  {
+    T gcd_ab = gcd(a, b);
+
+    if (gcd_ab == 1)
+    {
+      // Early termination: if the GCD is one, it will remain one
+      // no matter what other numbers are processed.
+      return 1;
+    }
+    else
+    {
+      return gcd(gcd_ab, rest...);
+    }
+  }
+  #endif
+#endif
 }
 
 #endif

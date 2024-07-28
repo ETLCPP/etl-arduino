@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 John Wellbelove
+Copyright(c) 2024 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -28,68 +28,113 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef ETL_ABSOLUTE_INCLUDED
-#define ETL_ABSOLUTE_INCLUDED
+#ifndef ETL_LCM_INCLUDED
+#define ETL_LCM_INCLUDED
 
 #include "type_traits.h"
-#include "integral_limits.h"
+#include "absolute.h"
+#include "static_assert.h"
+#include "gcd.h"
 
 namespace etl
 {
   //***************************************************************************
+  // Least Common Multiple.
+  // For unsigned types.
+  //***************************************************************************
+  template <typename T>
+  ETL_NODISCARD
+  ETL_CONSTEXPR14
+  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
+    lcm(T a, T b) ETL_NOEXCEPT
+  {
+    ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Integral type required");
+
+    // Early termination: if either number is zero, the LCM is zero.
+    if (a == 0 || b == 0)
+    {
+      return 0;
+    }
+    else
+    {
+      return a * (b / gcd(a, b));
+    }
+  }
+
+  //***************************************************************************
+  // Least Common Multiple.
   // For signed types.
   //***************************************************************************
   template <typename T>
   ETL_NODISCARD
-  ETL_CONSTEXPR 
+  ETL_CONSTEXPR14
   typename etl::enable_if<etl::is_signed<T>::value, T>::type
-    absolute(T value) ETL_NOEXCEPT
+    lcm(T a, T b) ETL_NOEXCEPT
   {
-    return (value < T(0)) ? -value : value;
+    ETL_STATIC_ASSERT(etl::is_integral<T>::value, "Integral type required");
+
+    typedef typename etl::make_unsigned<T>::type utype;
+
+    utype ua = etl::absolute_unsigned(a);
+    utype ub = etl::absolute_unsigned(b);
+
+    return static_cast<T>(lcm(ua, ub));
   }
 
-  //***************************************************************************
-  // For unsigned types.
-  //***************************************************************************
-  template <typename T>
-  ETL_NODISCARD
-  ETL_CONSTEXPR
-  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
-    absolute(T value) ETL_NOEXCEPT
-  {
-    return value;
-  }
-
-  //***************************************************************************
-  // For signed types.
-  // Returns the result as the unsigned type.
-  //***************************************************************************
 #if ETL_USING_CPP11
-  template <typename T, typename TReturn = typename etl::make_unsigned<T>::type>
-#else
-  template <typename T, typename TReturn>
-  #endif
+  #if ETL_HAS_INITIALIZER_LIST
+  //***************************************************************************
+  // Least Common Multiple.
+  // Non-recursive, using an initializer_list.
+  // Top level variadic function.
+  //***************************************************************************
+  template<typename T, typename... TRest>
   ETL_NODISCARD
-  ETL_CONSTEXPR 
-  typename etl::enable_if<etl::is_signed<T>::value, TReturn>::type
-    absolute_unsigned(T value) ETL_NOEXCEPT
+  ETL_CONSTEXPR14
+  T lcm(T first, TRest... rest) ETL_NOEXCEPT
   {
-    return (value == etl::integral_limits<T>::min) ? (etl::integral_limits<TReturn>::max / 2U) + 1U
-                                                   : (value < T(0)) ? TReturn(-value) : TReturn(value);
-  }
+    T result = first;
 
-  //***************************************************************************
-  // For unsigned types.
-  // Returns the result as the unsigned type.
-  //***************************************************************************
-  template <typename T>
-  ETL_NODISCARD
-  ETL_CONSTEXPR
-  typename etl::enable_if<etl::is_unsigned<T>::value, T>::type
-    absolute_unsigned(T value) ETL_NOEXCEPT
-  {
-    return etl::absolute(value);
+    for (T value : {rest...})
+    {
+      result = lcm(result, value);
+
+      if (result == 0)
+      {
+        // Early termination: if the LCM is zero, it will remain zero
+        // no matter what other numbers are processed.
+        return 0;
+      }
+    }
+
+    return result;
   }
+  #else
+  //***************************************************************************
+  // Least Common Multiple.
+  // Recursive
+  // Top level variadic function.
+  //***************************************************************************
+  template<typename T, typename... TRest>
+  ETL_NODISCARD
+  ETL_CONSTEXPR14
+  T lcm(T a, T b, TRest... rest) ETL_NOEXCEPT
+  {
+    T lcm_ab = lcm(a, b);
+
+    if (lcm_ab == 0)
+    {
+      // Early termination: if the LCM is zero, it will remain zero
+      // no matter what other numbers are processed.
+      return 0;
+    }
+    else
+    {
+      return lcm(lcm_ab, rest...);
+    }
+  }
+  #endif
+#endif
 }
 
 #endif
