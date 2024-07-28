@@ -974,7 +974,7 @@ namespace etl
     /// Gets the current size of the vector.
     ///\return The current size of the vector.
     //*************************************************************************
-    ETL_CONSTEXPR size_type size() const
+    size_type size() const
     {
       return size_t(p_end - p_buffer);
     }
@@ -1376,7 +1376,7 @@ namespace etl
   template <typename... T>
   constexpr auto make_vector(T&&... t) -> etl::vector<typename etl::common_type_t<T...>, sizeof...(T)>
   {
-    return { { etl::forward<T>(t)... } };
+    return { etl::forward<T>(t)... };
   }
 #endif
 
@@ -1674,7 +1674,7 @@ namespace etl
   template <typename... T>
   constexpr auto make_vector(T*... t) -> etl::vector<typename etl::common_type_t<T*...>, sizeof...(T)>
   {
-    return { { etl::forward<T*>(t)... } };
+    return { etl::forward<T*>(t)... };
   }
 #endif
 
