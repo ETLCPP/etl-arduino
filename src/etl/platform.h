@@ -118,6 +118,17 @@ SOFTWARE.
 #define ETL_8BIT_SUPPORT (CHAR_BIT == 8) // Deprecated
 
 //*************************************
+// Some targets support 20bit types.
+#if defined(ETL_USE_20BIT_TYPES)
+  #define ETL_USING_20BIT_TYPES     1
+  #define ETL_NOT_USING_20BIT_TYPES 0
+#else
+  #define ETL_USING_20BIT_TYPES     0
+  #define ETL_NOT_USING_20BIT_TYPES 1
+#endif
+
+
+//*************************************
 // Helper macro for ETL_NO_64BIT_TYPES.
 #if defined(ETL_NO_64BIT_TYPES)
   #define ETL_USING_64BIT_TYPES     0
@@ -128,16 +139,6 @@ SOFTWARE.
 #endif
 
 //*************************************
-// Helper macro for variant selection.
-#if defined(ETL_USE_LEGACY_VARIANT)
-  #define ETL_USING_LEGACY_VARIANT     1
-  #define ETL_NOT_USING_LEGACY_VARIANT 0
-#else
-  #define ETL_USING_LEGACY_VARIANT     0
-  #define ETL_NOT_USING_LEGACY_VARIANT 1
-#endif
-
-//*************************************
 // Figure out things about the compiler, if haven't already done so in etl_profile.h
 #include "profiles/determine_compiler_version.h"
 #include "profiles/determine_compiler_language_support.h"
@@ -145,6 +146,16 @@ SOFTWARE.
 //*************************************
 // See if we can determine the OS we're compiling on, if haven't already done so in etl_profile.h
 #include "profiles/determine_development_os.h"
+
+//*************************************
+// Helper macro for choosing the variant type.
+#if !ETL_USING_CPP11 || defined(ETL_USE_LEGACY_VARIANT)
+  #define ETL_USING_LEGACY_VARIANT     1
+  #define ETL_NOT_USING_LEGACY_VARIANT 0
+#else
+  #define ETL_USING_LEGACY_VARIANT     0
+  #define ETL_NOT_USING_LEGACY_VARIANT 1
+#endif
 
 //*************************************
 // Check WCHAR_MIN and WCHAR_MAX

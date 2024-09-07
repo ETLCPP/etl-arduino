@@ -147,10 +147,10 @@ namespace etl
     //*****************************************************************
     void add_observer(TObserver& observer)
     {
-		  // See if we already have it in our list.
+      // See if we already have it in our list.
       typename Observer_List::iterator i_observer_item = find_observer(observer);
 
-		  // Not there?
+      // Not there?
       if (i_observer_item == observer_list.end())
       {
         // Is there enough room?
@@ -253,6 +253,24 @@ namespace etl
       }
     }
 
+    //*****************************************************************
+    /// Notify all of the observers, sending them the notification.
+    //*****************************************************************
+    void notify_observers()
+    {
+      typename Observer_List::iterator i_observer_item = observer_list.begin();
+
+      while (i_observer_item != observer_list.end())
+      {
+        if (i_observer_item->enabled)
+        {
+          i_observer_item->p_observer->notification();
+        }
+
+        ++i_observer_item;
+      }
+    }
+
   protected:
 
     ~observable()
@@ -275,18 +293,22 @@ namespace etl
   };
 
 #if ETL_USING_CPP11 && !defined(ETL_OBSERVER_FORCE_CPP03_IMPLEMENTATION)
+  template <typename... TTypes>
+  class observer;
 
   //*****************************************************************
   /// The observer class for N types.
   ///\ingroup observer
   //*****************************************************************
-  template <typename T1, typename... Types>
-  class observer : public observer<T1>, public observer<Types...>
+  template <typename T1, typename... TRest>
+  class observer<T1, TRest...> : public observer<T1>, public observer<TRest...>
   {
   public:
 
+    ETL_STATIC_ASSERT((!etl::has_duplicates<T1, TRest...>::value), "Observer has duplicate notification types");
+
     using observer<T1>::notification;
-    using observer<Types...>::notification;
+    using observer<TRest...>::notification;
   };
 
   //*****************************************************************
@@ -303,6 +325,20 @@ namespace etl
     virtual void notification(T1) = 0;
   };
 
+  //*****************************************************************
+  /// The specialised observer class for void type.
+  ///\ingroup observer
+  //*****************************************************************
+  template <>
+  class observer<void>
+  {
+  public:
+
+    virtual ~observer() = default;
+
+    virtual void notification() = 0;
+  };
+
 #else
 
   //*********************************************************************
@@ -317,18 +353,26 @@ namespace etl
             typename T6  = void,
             typename T7  = void,
             typename T8  = void>
-  class observer
+  class observer : public observer<T1>
+                 , public observer<T2>
+                 , public observer<T3>
+                 , public observer<T4>
+                 , public observer<T5>
+                 , public observer<T6>
+                 , public observer<T7>
+                 , public observer<T8>
   {
   public:
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
-    virtual void notification(T4) = 0;
-    virtual void notification(T5) = 0;
-    virtual void notification(T6) = 0;
-    virtual void notification(T7) = 0;
-    virtual void notification(T8) = 0;
+
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
+    using observer<T4>::notification;
+    using observer<T5>::notification;
+    using observer<T6>::notification;
+    using observer<T7>::notification;
+    using observer<T8>::notification;
   };
 
   //*********************************************************************
@@ -342,18 +386,24 @@ namespace etl
             typename T5,
             typename T6,
             typename T7>
-  class observer<T1, T2, T3, T4, T5, T6, T7>
+  class observer<T1, T2, T3, T4, T5, T6, T7> : public observer<T1>
+                                             , public observer<T2>
+                                             , public observer<T3>
+                                             , public observer<T4>
+                                             , public observer<T5>
+                                             , public observer<T6>
+                                             , public observer<T7>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
-    virtual void notification(T4) = 0;
-    virtual void notification(T5) = 0;
-    virtual void notification(T6) = 0;
-    virtual void notification(T7) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
+    using observer<T4>::notification;
+    using observer<T5>::notification;
+    using observer<T6>::notification;
+    using observer<T7>::notification;
   };
 
   //*********************************************************************
@@ -366,17 +416,22 @@ namespace etl
             typename T4,
             typename T5,
             typename T6>
-  class observer<T1, T2, T3, T4, T5, T6>
+  class observer<T1, T2, T3, T4, T5, T6> : public observer<T1>
+                                         , public observer<T2>
+                                         , public observer<T3>
+                                         , public observer<T4>
+                                         , public observer<T5>
+                                         , public observer<T6>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
-    virtual void notification(T4) = 0;
-    virtual void notification(T5) = 0;
-    virtual void notification(T6) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
+    using observer<T4>::notification;
+    using observer<T5>::notification;
+    using observer<T6>::notification;
   };
 
   //*********************************************************************
@@ -388,16 +443,20 @@ namespace etl
             typename T3,
             typename T4,
             typename T5>
-  class observer<T1, T2, T3, T4, T5>
+  class observer<T1, T2, T3, T4, T5> : public observer<T1>
+                                     , public observer<T2>
+                                     , public observer<T3>
+                                     , public observer<T4>
+                                     , public observer<T5>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
-    virtual void notification(T4) = 0;
-    virtual void notification(T5) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
+    using observer<T4>::notification;
+    using observer<T5>::notification;
   };
 
   //*********************************************************************
@@ -408,15 +467,18 @@ namespace etl
             typename T2,
             typename T3,
             typename T4>
-  class observer<T1, T2, T3, T4>
+  class observer<T1, T2, T3, T4> : public observer<T1>
+                                 , public observer<T2>
+                                 , public observer<T3>
+                                 , public observer<T4>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
-    virtual void notification(T4) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
+    using observer<T4>::notification;
   };
 
   //*********************************************************************
@@ -426,14 +488,16 @@ namespace etl
   template <typename T1,
             typename T2,
             typename T3>
-  class observer<T1, T2, T3>
+  class observer<T1, T2, T3> : public observer<T1>
+                             , public observer<T2>
+                             , public observer<T3>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
-    virtual void notification(T3) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
+    using observer<T3>::notification;
   };
 
   //*********************************************************************
@@ -442,13 +506,14 @@ namespace etl
   //*********************************************************************
   template <typename T1,
             typename T2>
-  class observer<T1, T2>
+  class observer<T1, T2> : public observer<T1>
+                         , public observer<T2>
   {
   public:
 
     virtual ~observer() {}
-    virtual void notification(T1) = 0;
-    virtual void notification(T2) = 0;
+    using observer<T1>::notification;
+    using observer<T2>::notification;
   };
 
   //*********************************************************************
@@ -462,6 +527,19 @@ namespace etl
 
     virtual ~observer() {}
     virtual void notification(T1) = 0;
+  };
+
+  //*********************************************************************
+  /// The observer interface for void argument notification type.
+  ///\ingroup observer
+  //*********************************************************************
+  template <>
+  class observer<void>
+  {
+  public:
+
+    virtual ~observer() {}
+    virtual void notification() = 0;
   };
 
 #endif
