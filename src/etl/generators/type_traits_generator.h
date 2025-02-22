@@ -639,18 +639,13 @@ namespace etl
   struct is_base_of
   {
   private:
-
-    template<typename T> struct dummy {};
-    struct internal: TDerived, dummy<int>{};
-
     static TBase* check(TBase*) { return (TBase*)0; }
 
-    template<typename T>
-    static char check(dummy<T>*) { return 0; }
+    static char check(...) { return 0; }
 
   public:
 
-    static const bool value = (sizeof(check((internal*)0)) == sizeof(TBase*));
+    static const bool value = (sizeof(check((TDerived*)0)) == sizeof(TBase*));
   };
 
   // For when TBase or TDerived is a fundamental type.
@@ -2317,6 +2312,9 @@ typedef integral_constant<bool, true>  true_type;
   struct has_duplicates<TFirst, TRest...> : etl::conditional_t<etl::is_one_of<TFirst, TRest...>::value,
                                                                etl::true_type,
                                                                has_duplicates<TRest...>> {};
+
+  template <typename T>
+  struct has_duplicates<T> : etl::false_type {};
 
   template <>
   struct has_duplicates<> : etl::false_type {};

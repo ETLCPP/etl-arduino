@@ -43,6 +43,10 @@ SOFTWARE.
 #include "algorithm.h"
 #include "private/minmax_push.h"
 
+#if ETL_USING_STL && ETL_USING_CPP17
+  #include <string_view>
+#endif
+
 #include <stdint.h>
 
 namespace etl
@@ -96,9 +100,9 @@ namespace etl
   {
   public:
 
-    typedef T                                     value_type;
-    typedef TTraits                               traits_type;
-    typedef size_t                                size_type;
+    typedef T        value_type;
+    typedef TTraits  traits_type;
+    typedef size_t   size_type;
     typedef const T& const_reference;
     typedef const T* const_pointer;
     typedef const T* const_iterator;
@@ -408,20 +412,48 @@ namespace etl
     }
 
     ETL_CONSTEXPR14 int compare(size_type position1, size_type count1,
-      basic_string_view view,
-      size_type position2, size_type count2) const
+                                basic_string_view view,
+                                size_type position2, size_type count2) const
     {
       return substr(position1, count1).compare(view.substr(position2, count2));
     }
 
     ETL_CONSTEXPR14 int compare(const T* text) const
     {
-      return compare(etl::basic_string_view<T, TTraits>(text));
+      const T* view_itr = mbegin;
+      const T* text_itr = text;
+
+      while (view_itr != mend && *text_itr != T(0))
+      {
+        if (*view_itr < *text_itr)
+        {
+          return -1;
+        }
+        else if (*view_itr > *text_itr)
+        {
+          return 1;
+        }
+        ++view_itr;
+        ++text_itr;
+      }
+
+      if ((view_itr == mend) && (*text_itr == T(0)))
+      {
+        return 0;
+      }
+      else if (view_itr == mend)
+      {
+        return -1;
+      }
+      else
+      {
+        return 1;
+      }
     }
 
     ETL_CONSTEXPR14 int compare(size_type position, size_type count, const T* text) const
     {
-      return substr(position, count).compare(etl::basic_string_view<T, TTraits>(text));
+      return substr(position, count).compare(text);
     }
 
     ETL_CONSTEXPR14 int compare(size_type position, size_type count1, const T* text, size_type count2) const
@@ -435,7 +467,7 @@ namespace etl
     ETL_CONSTEXPR14 bool starts_with(etl::basic_string_view<T, TTraits> view) const
     {
       return (size() >= view.size()) &&
-              (compare(0, view.size(), view) == 0);
+             (compare(0, view.size(), view) == 0);
     }
 
     ETL_CONSTEXPR14 bool starts_with(T c) const
@@ -448,7 +480,7 @@ namespace etl
       size_t lengthtext = TTraits::length(text);
 
       return (size() >= lengthtext) &&
-              (compare(0, lengthtext, text) == 0);
+             (compare(0, lengthtext, text) == 0);
     }
 
     //*************************************************************************
@@ -457,7 +489,7 @@ namespace etl
     ETL_CONSTEXPR14 bool ends_with(etl::basic_string_view<T, TTraits> view) const
     {
       return (size() >= view.size()) &&
-              (compare(size() - view.size(), npos, view) == 0);
+             (compare(size() - view.size(), npos, view) == 0);
     }
 
     ETL_CONSTEXPR14 bool ends_with(T c) const
@@ -471,7 +503,7 @@ namespace etl
       size_t lengthview = size();
 
       return (lengthview >= lengthtext) &&
-              (compare(lengthview - lengthtext, lengthtext, text) == 0);
+             (compare(lengthview - lengthtext, lengthtext, text) == 0);
     }
 
     //*************************************************************************
@@ -745,6 +777,30 @@ namespace etl
     ETL_CONSTEXPR14 size_type find_last_not_of(const T* text, size_type position = npos) const
     {
       return find_last_not_of(etl::basic_string_view<T, TTraits>(text), position);
+    }
+
+    //*********************************************************************
+    /// Checks that the view is within this string
+    //*********************************************************************
+    bool contains(const etl::basic_string_view<T, TTraits>& view) const 
+    {
+      return find(view) != npos;
+    }
+
+    //*********************************************************************
+    /// Checks that text is within this string
+    //*********************************************************************
+    bool contains(const_pointer s) const 
+    {
+      return find(s) != npos;
+    }
+
+    //*********************************************************************
+    /// Checks that character is within this string
+    //*********************************************************************
+    bool contains(value_type c) const 
+    {
+      return find(c) != npos;
     }
 
     //*************************************************************************
