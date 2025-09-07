@@ -21,7 +21,7 @@ copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+FITNESS FOR Value1 PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
@@ -37,6 +37,22 @@ SOFTWARE.
 
 namespace etl
 {
+  //***************************************************************************
+  // Greatest Common Divisor.
+  // Compile time.
+  //***************************************************************************
+  template <intmax_t Value1, intmax_t Value2>
+  struct gcd_const
+  {
+    static ETL_CONSTANT intmax_t value = gcd_const<Value2, Value1 % Value2>::value;
+  };
+
+  template <intmax_t Value1>
+  struct gcd_const<Value1, 0>
+  {
+    static ETL_CONSTANT intmax_t value = Value1;
+  };
+
   //***************************************************************************
   // Greatest Common Divisor.
   // For unsigned types.

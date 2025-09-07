@@ -158,23 +158,16 @@ inline void swap(etl::debug_count& lhs, etl::debug_count& rhs)
 }
 
 #else
-  #define ETL_DECLARE_DEBUG_COUNT              etl::debug_count etl_debug_count
-  #define ETL_SET_DEBUG_COUNT(n)               ETL_DO_NOTHING
-  #define ETL_GET_DEBUG_COUNT                  ETL_DO_NOTHING
-  #define ETL_INCREMENT_DEBUG_COUNT            ETL_DO_NOTHING
-  #define ETL_DECREMENT_DEBUG_COUNT            ETL_DO_NOTHING
-  #define ETL_ADD_DEBUG_COUNT(n)               ETL_DO_NOTHING
-  #define ETL_SUBTRACT_DEBUG_COUNT(n)          ETL_DO_NOTHING
-  #define ETL_RESET_DEBUG_COUNT                ETL_DO_NOTHING
-  #define ETL_OBJECT_RESET_DEBUG_COUNT(object) ETL_DO_NOTHING
-  #define ETL_OBJECT_GET_DEBUG_COUNT(object)   ETL_DO_NOTHING
-
-namespace etl
-{
-  class debug_count
-  {
-  };
-}
+#define ETL_DECLARE_DEBUG_COUNT              enum { etl_debug_count_suppressed__ = 0 }
+#define ETL_SET_DEBUG_COUNT(n)               ((void)0)
+#define ETL_GET_DEBUG_COUNT                  0
+#define ETL_INCREMENT_DEBUG_COUNT            ((void)0)
+#define ETL_DECREMENT_DEBUG_COUNT            ((void)0)
+#define ETL_ADD_DEBUG_COUNT(n)               ((void)0)
+#define ETL_SUBTRACT_DEBUG_COUNT(n)          ((void)0)
+#define ETL_RESET_DEBUG_COUNT                ((void)0)
+#define ETL_OBJECT_RESET_DEBUG_COUNT(object) ((void)0)
+#define ETL_OBJECT_GET_DEBUG_COUNT(object)   0
 #endif  // ETL_DEBUG_COUNT
 
 #endif

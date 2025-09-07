@@ -32,50 +32,37 @@ SOFTWARE.
 #include "platform.h"
 #include "static_assert.h"
 
+#if ETL_USING_CPP11
 namespace etl
 {
-#if ETL_USING_CPP11
-
-  //***************************************************************************
-  /// Finds the nth type in a variadic type parameter.
-  //***************************************************************************
-  template <size_t N, typename... TTypes>
-  struct nth_type;
-
-  //***************************************************************************
-  /// Finds the nth type in a variadic type parameter.
-  //***************************************************************************
-  template <size_t N, typename T1, typename... TRest>
-  struct nth_type<N, T1, TRest...>
+  namespace private_nth_type
   {
-    ETL_STATIC_ASSERT(N <= sizeof...(TRest), "etl::nth_type out of range for type list");
+    //***********************************
+    template <size_t Index, typename T1, typename... TRest>
+    struct nth_type_helper
+    {
+      using type = typename nth_type_helper<Index - 1U, TRest...>::type;
+    };
 
-    using type = typename nth_type<N - 1U, TRest...>::type;
+    template <typename T1, typename... TRest>
+    struct nth_type_helper<0U, T1, TRest...>
+    {
+      using type = T1;
+    };
+  }
+
+  //***********************************
+  template <size_t Index, typename... TTypes>
+  struct nth_type
+  {
+    ETL_STATIC_ASSERT(Index < sizeof...(TTypes), "etl::nth_type index 'Index' out of bounds");
+
+    using type = typename private_nth_type::nth_type_helper<Index, TTypes...>::type;
   };
 
-  //***************************************************************************
-  /// Finds the 0thth type in a variadic type parameter.
-  //***************************************************************************
-  template <typename T1, typename... TRest>
-  struct nth_type<0U, T1, TRest...>
-  {
-    using type = T1;
-  };
-
-  //***************************************************************************
-  /// Finds the 0th type in a variadic type parameter.
-  //***************************************************************************
-  template <size_t N>
-  struct nth_type<N>
-  {
-  };
-
-  //***************************************************************************
-  /// Finds the nth type in a variadic type parameter.
-  //***************************************************************************
-  template <size_t N, typename... TTypes>
-  using nth_type_t = typename nth_type<N, TTypes...>::type;
-#endif
+  //***********************************
+  template <size_t Index, typename... TTypes>
+  using nth_type_t = typename nth_type<Index, TTypes...>::type;
 }
-
+#endif
 #endif

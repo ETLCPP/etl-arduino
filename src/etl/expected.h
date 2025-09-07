@@ -139,9 +139,11 @@ namespace etl
     /// Assign from etl::unexpected.
     //*******************************************
     ETL_CONSTEXPR14
-      etl::unexpected<TError>& operator =(const etl::unexpected<TError>& rhs)
+    etl::unexpected<TError>& operator =(const etl::unexpected<TError>& rhs)
     {
+#if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
+#endif
 
       error_value = rhs.error_value;
       return *this;
@@ -188,7 +190,7 @@ namespace etl
 
     //*******************************************
     /// Get the error.
-    //*******************************************    
+    //*******************************************
     ETL_CONSTEXPR14 TError&& error() const&& ETL_NOEXCEPT
     {
       return etl::move(error_value);
@@ -443,7 +445,9 @@ namespace etl
     //*******************************************
     expected& operator =(const unexpected_type& ue)
     {
+#if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
+#endif
 
       storage.template emplace<Error_Type>(ue.error());
 
@@ -500,7 +504,7 @@ namespace etl
     //*******************************************
     /// Get the value.
     //*******************************************
-    value_type& value() const
+    const value_type& value() const
     {
       return etl::get<Value_Type>(storage);
     }
@@ -660,7 +664,7 @@ namespace etl
     //*******************************************
     ///
     //*******************************************
-    error_type& error() const
+    const error_type& error() const
     {
       return etl::get<Error_Type>(storage);
     }
@@ -843,7 +847,9 @@ namespace etl
     //*******************************************
     expected& operator =(const unexpected_type& ue)
     {
+#if ETL_USING_CPP11
       ETL_STATIC_ASSERT(etl::is_copy_constructible<TError>::value, "Error not copy assignable");
+#endif
 
       storage.template emplace<Error_Type>(ue.error());
       return *this;
@@ -932,7 +938,7 @@ namespace etl
     /// Returns the error
     /// Undefined behaviour if an error has not been set.
     //*******************************************
-    error_type& error() const
+    const error_type& error() const
     {
       return etl::get<Error_Type>(storage);
     }
@@ -1107,4 +1113,3 @@ void swap(etl::unexpected<TError>& lhs, etl::unexpected<TError>& rhs)
 }
 
 #endif
-

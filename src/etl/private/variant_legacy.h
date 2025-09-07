@@ -40,6 +40,7 @@ SOFTWARE.
 #include "../error_handler.h"
 #include "../null_type.h"
 #include "../placement_new.h"
+#include "../monostate.h"
 
 #include <stdint.h>
 
@@ -65,7 +66,7 @@ namespace etl
       /// Placeholder for unused template parameters.
       /// This class is never instantiated.
       //*************************************************************************
-      template <size_t ID>
+      template <size_t Id>
       struct no_type
       {
       };
@@ -75,9 +76,7 @@ namespace etl
     /// Monostate for variants.
     ///\ingroup variant
     //***************************************************************************
-    struct monostate
-    {
-    };
+    typedef etl::monostate monostate;
 
     //***************************************************************************
     /// Base exception for the variant class.

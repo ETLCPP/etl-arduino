@@ -37,7 +37,19 @@ SOFTWARE.
 
 // Determine C++23 support
 #if !defined(ETL_CPP23_SUPPORTED)
-  #define ETL_CPP23_SUPPORTED 0
+  #if defined(__cplusplus)
+    #if defined(ETL_COMPILER_MICROSOFT)
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #elif defined(ETL_COMPILER_ARM5)
+      #define ETL_CPP23_SUPPORTED 0
+    #elif defined(ETL_COMPILER_GCC)
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #else
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #endif
+  #else
+    #define ETL_CPP23_SUPPORTED 0
+  #endif
 #endif
 
 #if ETL_CPP23_SUPPORTED
@@ -204,6 +216,21 @@ SOFTWARE.
 // NAN not defined or Rowley CrossWorks
 #if !defined(ETL_NO_CPP_NAN_SUPPORT) && (!defined(NAN) || defined(__CROSSWORKS_ARM) || defined(ETL_COMPILER_ARM5) || defined(ARDUINO))
   #define ETL_NO_CPP_NAN_SUPPORT
+#endif
+
+#if defined(__has_include)
+  #if __has_include(<version>)
+    #include <version>
+
+    #if defined(__cpp_lib_byteswap)
+      #if __cpp_lib_byteswap != 0
+        #define ETL_HAS_STD_BYTESWAP 1
+      #endif
+    #endif
+  #endif
+#endif
+#ifndef ETL_HAS_STD_BYTESWAP
+  #define ETL_HAS_STD_BYTESWAP 0
 #endif
 
 #endif

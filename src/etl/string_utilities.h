@@ -757,6 +757,45 @@ namespace etl
   }
 
   //***************************************************************************
+  /// get_token_list
+  ///\brief Splits a string of tokens to a set of views, according to a set of delimiters.
+  /// The tokenisation stops if:
+  ///   1. The end of the input text is reached.
+  ///   2. The max_size() of the output container is reached.
+  ///   3. The number of tokens found reaches max_n_tokens. 
+  /// The input container must define <code>const_pointer</code>.
+  /// The output container must define <code>value_type</code>.
+  /// The output container must define the member function <code>max_size</code> that returns the maximum size of the container.
+  /// The output container must define the member function <code>push_back</code> that pushes the view on to the back of the container.
+  ///\param input               The input string.
+  ///\param output              A reference to an output container of string views.
+  ///\param delimiters          A pointer to a string of valid delimiters.
+  ///\param ignore_empty_tokens If <b>true</b> then empty tokens are ignored.
+  ///\param max_n_tokens        The maximum number of tokens to collect. Default tokenise everything.
+  ///\return Returns <b>true</b> if all tokens were added to the list, otherwise <b>false</b>.
+  //***************************************************************************
+  template <typename TInput, typename TOutput>
+  bool get_token_list(const TInput& input, TOutput& output, typename TInput::const_pointer delimiters, bool ignore_empty_tokens, size_t max_n_tokens = etl::integral_limits<size_t>::max)
+  {
+    typedef typename TOutput::value_type string_view_t;
+
+    etl::optional<string_view_t> token;
+
+    size_t count = 0;
+    while ((count != output.max_size()) &&
+           (count != max_n_tokens) &&
+           (token = etl::get_token(input, delimiters, token, ignore_empty_tokens)))
+    {
+      output.push_back(token.value());
+      ++count;
+    }
+
+    bool all_tokens_found = (token.has_value() == false);
+
+    return all_tokens_found;
+  }
+
+  //***************************************************************************
   /// pad_left
   //***************************************************************************
   template <typename TIString>
@@ -843,6 +882,53 @@ namespace etl
     ++itr;
 
     etl::transform(itr, s.end(), itr, ::tolower);
+  }
+
+  //***************************************************************************
+  /// str_n_copy
+  /// Copies from src to dst until either n characters have been copied, or a 
+  /// terminating null is found.
+  /// Null terminates the destination if less than n characters have been copied.
+  /// Returns a str_n_copy_result.
+  //***************************************************************************
+  struct str_n_copy_result
+  {
+    size_t count;
+    bool   truncated;
+    bool   terminated;
+  };
+
+  template <typename T>
+  str_n_copy_result str_n_copy(const T* src, size_t n, T* dst)
+  {
+    if ((src == ETL_NULLPTR) || (dst == ETL_NULLPTR))
+    {
+      str_n_copy_result result = { 0, false, false };
+      return result;
+    }
+
+    size_t count = 0;
+
+    while ((count != n) && (*src != 0))
+    {
+      *dst++ = *src++;
+      ++count;
+    }
+
+    // Did we stop because of a terminating zero?
+    if (count != n)
+    {
+      // Yes we did.
+      *dst = 0;
+      str_n_copy_result result = { count, false, true };
+      return result;
+    }
+    else
+    {
+      // No. Truncation depends on the next src character being a terminating zero or not.
+      str_n_copy_result result = { count, *src != 0, false };
+      return result;
+    }
   }
 }
 

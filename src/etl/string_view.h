@@ -47,6 +47,10 @@ SOFTWARE.
   #include <string_view>
 #endif
 
+#if ETL_USING_STD_OSTREAM
+  #include <ostream>
+#endif
+
 #include <stdint.h>
 
 namespace etl
@@ -65,7 +69,7 @@ namespace etl
   };
 
   //***************************************************************************
-  ///\ingroup stack
+  ///\ingroup string
   /// The exception thrown when the index is out of bounds.
   //***************************************************************************
   class string_view_bounds : public string_view_exception
@@ -79,7 +83,7 @@ namespace etl
   };
 
   //***************************************************************************
-  ///\ingroup stack
+  ///\ingroup string
   /// The exception thrown when the view is uninitialised.
   //***************************************************************************
   class string_view_uninitialised : public string_view_exception
@@ -103,8 +107,11 @@ namespace etl
     typedef T        value_type;
     typedef TTraits  traits_type;
     typedef size_t   size_type;
+    typedef T&       reference;
     typedef const T& const_reference;
+    typedef T*       pointer;
     typedef const T* const_pointer;
+    typedef const T* iterator;
     typedef const T* const_iterator;
     typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
@@ -359,7 +366,7 @@ namespace etl
       {
         n = etl::min(count, size() - position);
 
-        etl::copy(mbegin + position, mbegin + position + n, destination);
+        etl::mem_copy(mbegin + position, n, destination);
       }
 
       return n;
@@ -370,7 +377,7 @@ namespace etl
     //*************************************************************************
     ETL_CONSTEXPR14 basic_string_view substr(size_type position = 0, size_type count = npos) const
     {
-      basic_string_view view;
+      basic_string_view view = basic_string_view();
 
       if (position < size())
       {
@@ -556,9 +563,9 @@ namespace etl
       position = etl::min(position, size());
 
       const_iterator iposition = etl::find_end(begin(),
-        begin() + position,
-        view.begin(),
-        view.end());
+                                               begin() + position,
+                                               view.begin(),
+                                               view.end());
 
       if (iposition == end())
       {
@@ -971,6 +978,19 @@ void swap(etl::basic_string_view<T, etl::char_traits<T> >& lhs, etl::basic_strin
 {
   lhs.swap(rhs);
 }
+
+//*************************************************************************
+/// Operator overload to write to std basic_ostream
+//*************************************************************************
+#if ETL_USING_STD_OSTREAM
+template <typename T>
+std::basic_ostream<T, std::char_traits<T> > &operator<<(std::basic_ostream<T, std::char_traits<T> > &os, 
+                                                        etl::basic_string_view<T, etl::char_traits<T> > text)
+{
+  os.write(text.data(), text.size());
+  return os;
+}
+#endif
 
 #include "private/minmax_pop.h"
 
