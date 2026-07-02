@@ -36,6 +36,7 @@ circular_iterator.h
 closure.h
 combinations.h
 compare.h
+concepts.h
 constant.h
 const_map.h
 const_multimap.h
@@ -124,6 +125,7 @@ flat_multimap.h
 flat_multiset.h
 flat_set.h
 fnv_1.h
+format.h
 format_spec.h
 forward_list.h
 frame_check_sequence.h
@@ -142,6 +144,7 @@ imemory_block_allocator.h
 index_of_type.h
 indirect_vector.h
 initializer_list.h
+inplace_function.h
 instance_count.h
 integral_limits.h
 intrusive_forward_list.h
@@ -150,6 +153,7 @@ intrusive_list.h
 intrusive_queue.h
 intrusive_stack.h
 invert.h
+invoke.h
 io_port.h
 ipool.h
 ireference_counted_message_pool.h
@@ -208,6 +212,7 @@ platform.h
 poly_span.h
 pool.h
 power.h
+print.h
 priority_queue.h
 pseudo_moving_average.h
 quantize.h
@@ -235,6 +240,7 @@ scaled_rounding.h
 scheduler.h
 set.h
 shared_message.h
+signal.h
 singleton.h
 singleton_base.h
 smallest.h
