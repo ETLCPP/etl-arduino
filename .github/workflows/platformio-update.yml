@@ -1,4 +1,4 @@
-name: Publish ETL (Arduino) to PlatformIO
+name: Publish ETL to PlatformIO (Both Versions)
 
 on:
   release:
@@ -20,7 +20,31 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Publish to PlatformIO Registry
+      # --- 1. Publish to the Newer Generic Version ---
+      # This uses your repo's default library.json name ("Embedded Template Library ETL")
+      - name: Publish to Modern Package Registry
+        run: pio package publish --owner etlcpp --non-interactive
+        env:
+          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_TOKEN }}
+
+      # --- 2. Modify the Manifest for the Older Version ---
+      # This dynamically alters the package name in memory for the next step
+      - name: Force Target to Legacy Package Name
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = "library.json";
+            if (fs.existsSync(file)) {
+              const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+              manifest.name = "Embedded Template Library - Arduino";
+              fs.writeFileSync(file, JSON.stringify(manifest, null, 2));
+              console.log("Switched target to Legacy Package Name.");
+            }
+          '
+
+      # --- 3. Publish to the Older Version ---
+      # This pushes the exact same codebase to the "Embedded Template Library - Arduino" slot
+      - name: Publish to Legacy Package Registry
         run: pio package publish --owner etlcpp --non-interactive
         env:
           PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_TOKEN }}
